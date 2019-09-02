@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.mapper;
+package com.siti.wisdomhydrologic.realmessageprocess.mapper;
 
 import com.siti.wisdomhydrologic.datepull.entity.DayEntity;
 import org.apache.ibatis.annotations.Insert;
@@ -18,7 +18,7 @@ public interface DayMapper extends Mapper<DayEntity> {
             "collection=\"dayList\"  separator=\",\" >(#{item.senId},#{item.time}" +
             ",#{item.v},#{item.avgV},#{item.maxV},#{item.maxT},#{item.minV}," +
             "#{item.minT},#{item.s},#{item.avgS},#{item.maxS},#{item.minS})</foreach></script>")
-    int batchInsert(@Param("dayList")List<DayEntity> dayList);
+    int batchInsert(@Param("dayList") List<DayEntity> dayList);
 
 }
 

@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.entity;
+package com.siti.wisdomhydrologic.realmessageprocess.entity;
 
 import javax.persistence.Id;
 import javax.persistence.Table;

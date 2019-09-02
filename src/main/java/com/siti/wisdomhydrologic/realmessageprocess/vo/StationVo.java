@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.vo;
+package com.siti.wisdomhydrologic.realmessageprocess.vo;
 
 /**
  * Created by dell on 2019/7/19.

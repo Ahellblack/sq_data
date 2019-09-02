@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.entity;
+package com.siti.wisdomhydrologic.realmessageprocess.entity;
 
 public class ConfigSensorSectionModule {
 

@@ -2,7 +2,6 @@ package com.siti.wisdomhydrologic.realmessageprocess.listener;
 
 import com.rabbitmq.client.Channel;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
-import com.siti.wisdomhydrologic.log.service.LogOperation;
 import com.siti.wisdomhydrologic.realmessageprocess.entity.Real;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.*;
 import com.siti.wisdomhydrologic.realmessageprocess.pipeline.PipelineValve;

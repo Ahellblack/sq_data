@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.vo;
+package com.siti.wisdomhydrologic.realmessageprocess.vo;
 
 import java.io.Serializable;
 import java.util.Date;

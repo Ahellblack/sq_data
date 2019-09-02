@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.mapper;
+package com.siti.wisdomhydrologic.realmessageprocess.mapper;
 
 import com.siti.wisdomhydrologic.datepull.entity.RealFiveminSensorDataEntity;
 import org.apache.ibatis.annotations.Select;

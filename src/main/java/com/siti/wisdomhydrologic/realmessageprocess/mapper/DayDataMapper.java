@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.mapper;
+package com.siti.wisdomhydrologic.realmessageprocess.mapper;
 
 import com.siti.wisdomhydrologic.datepull.entity.ConfigSensorSectionModule;
 import com.siti.wisdomhydrologic.datepull.vo.DayVo;
@@ -26,7 +26,7 @@ public interface DayDataMapper {
             "#{item.time},#{item.avgV},#{item.maxV},#{item.maxT},#{item.minV},#{item.minT}," +
             "#{item.s},#{item.avgS},#{item.maxS},#{item.minS},#{item.stationId},#{item.stationName})" +
             "</foreach></script>")
-    int addDayData(@Param("database")String database,@Param("dayList") List<DayVo> dayList) ;
+    int addDayData(@Param("database") String database, @Param("dayList") List<DayVo> dayList) ;
 
     @Insert("<script>" +
             "INSERT INTO `history_day_sensor_data` " +
@@ -81,7 +81,7 @@ public interface DayDataMapper {
             "#{item.time},#{item.avgV},#{item.maxV},#{item.maxT},#{item.minV},#{item.minT}," +
             "#{item.s},#{item.avgS},#{item.maxS},#{item.minS},#{item.stationId},#{item.stationName})" +
             "</foreach></script>")
-    int addHourData(@Param("datebase")String datebase,@Param("hourList") List<DayVo> hourVo);
+    int addHourData(@Param("datebase") String datebase, @Param("hourList") List<DayVo> hourVo);
 
     @Update("CREATE TABLE if not exists `${database}`" +
             "(`sensor_code` int(10) DEFAULT NULL COMMENT '传感器编号', " +

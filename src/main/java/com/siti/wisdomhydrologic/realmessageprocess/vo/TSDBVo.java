@@ -1,11 +1,16 @@
 package com.siti.wisdomhydrologic.realmessageprocess.vo;
 
+import javax.persistence.Transient;
+import java.io.Serializable;
+import java.sql.Timestamp;
 import java.util.Date;
 
 /**
  * Created by dell on 2019/7/16.
  */
-public class TSDBVo {
+public class TSDBVo implements Serializable {
+
+    private final static Long serializabelID = 1234567890L;
 
     Integer SENID;
     Date Time;
@@ -36,7 +41,7 @@ public class TSDBVo {
     /**
      * 为mq传入是做判断丢包添加的字段
      * maxBatch;currentBatch;status;sumSize;currentSize;
-     * */
+     */
     private int maxBatch;
     private int currentBatch;
     private int status;
@@ -45,23 +50,18 @@ public class TSDBVo {
 
     /**
      * 添加测站的id,name
-     * */
+     */
     private String stationName;
     private int stationId;
     /**
      * 添加数据单位
-     * */
+     */
     private int sensorTypeId;
     private String sensorTypeName;
     private String sensorDataUnit;
 
-    public Integer getSENID() {
-        return SENID;
-    }
-
-    public void setSENID(Integer SENID) {
-        this.SENID = SENID;
-    }
+    @Transient
+    private Timestamp sensorDataTime;
 
     public Date getTime() {
         return Time;
@@ -69,6 +69,18 @@ public class TSDBVo {
 
     public void setTime(Date time) {
         Time = time;
+    }
+
+    public static Long getSerializabelID() {
+        return serializabelID;
+    }
+
+    public Integer getSENID() {
+        return SENID;
+    }
+
+    public void setSENID(Integer SENID) {
+        this.SENID = SENID;
     }
 
     public double getV0() {
@@ -341,5 +353,18 @@ public class TSDBVo {
 
     public void setSensorDataUnit(String sensorDataUnit) {
         this.sensorDataUnit = sensorDataUnit;
+    }
+
+    public Timestamp getSensorDataTime() {
+        return sensorDataTime;
+    }
+
+    public void setSensorDataTime(Timestamp sensorDataTime) {
+        this.sensorDataTime = sensorDataTime;
+    }
+
+    @Override
+    public String toString() {
+        return "TSDBVo{" + "SENID=" + SENID + ", Time=" + Time + ", V0=" + V0 + ", V1=" + V1 + ", V2=" + V2 + ", V3=" + V3 + ", V4=" + V4 + ", V5=" + V5 + ", V6=" + V6 + ", V7=" + V7 + ", V8=" + V8 + ", V9=" + V9 + ", V10=" + V10 + ", V11=" + V11 + ", S0=" + S0 + ", S1=" + S1 + ", S2=" + S2 + ", S3=" + S3 + ", S4=" + S4 + ", S5=" + S5 + ", S6=" + S6 + ", S7=" + S7 + ", S8=" + S8 + ", S9=" + S9 + ", S10=" + S10 + ", S11=" + S11 + ", maxBatch=" + maxBatch + ", currentBatch=" + currentBatch + ", status=" + status + ", sumSize=" + sumSize + ", currentSize=" + currentSize + ", stationName='" + stationName + '\'' + ", stationId=" + stationId + ", sensorTypeId=" + sensorTypeId + ", sensorTypeName='" + sensorTypeName + '\'' + ", sensorDataUnit='" + sensorDataUnit + '\'' + '}';
     }
 }

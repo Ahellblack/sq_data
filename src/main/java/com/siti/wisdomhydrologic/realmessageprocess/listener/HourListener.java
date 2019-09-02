@@ -1,40 +1,25 @@
 package com.siti.wisdomhydrologic.realmessageprocess.listener;
 
-import com.google.common.collect.Maps;
 import com.rabbitmq.client.Channel;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
-import com.siti.wisdomhydrologic.config.ConstantConfig;
-import com.siti.wisdomhydrologic.config.RabbitMQConfig;
-import com.siti.wisdomhydrologic.datepull.mapper.DayDataMapper;
-import com.siti.wisdomhydrologic.datepull.mapper.TSDBMapper;
-import com.siti.wisdomhydrologic.datepull.service.impl.DayDataServiceImpl;
-import com.siti.wisdomhydrologic.datepull.vo.DayVo;
-import com.siti.wisdomhydrologic.realmessageprocess.entity.RainfallEntity;
-import com.siti.wisdomhydrologic.realmessageprocess.mapper.RainFallMapper;
-import com.siti.wisdomhydrologic.realmessageprocess.mapper.TideLevelMapper;
-import com.siti.wisdomhydrologic.realmessageprocess.mapper.WaterLevelMapper;
+import com.siti.wisdomhydrologic.realmessageprocess.mapper.*;
 import com.siti.wisdomhydrologic.realmessageprocess.pipeline.PipelineValve;
-import com.siti.wisdomhydrologic.realmessageprocess.service.impl.DayRainfallValve;
+import com.siti.wisdomhydrologic.realmessageprocess.service.impl.DayDataServiceImpl;
 import com.siti.wisdomhydrologic.realmessageprocess.service.impl.HourRainfallValve;
+import com.siti.wisdomhydrologic.realmessageprocess.vo.DayVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.annotation.RabbitHandler;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**

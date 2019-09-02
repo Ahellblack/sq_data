@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.datepull.service;
+package com.siti.wisdomhydrologic.realmessageprocess.service;
 
 import com.siti.wisdomhydrologic.datepull.entity.DayEntity;
 
@@ -11,5 +11,5 @@ import java.util.List;
  */
 public interface DayToDB {
 
-    int batchInsert(List<DayEntity > entityList);
+    int batchInsert(List<DayEntity> entityList);
 }
