@@ -46,87 +46,62 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
     }
 
     @Override
-    public void beforeProcess(List<RealVo> realList,Map<Integer,Real> compare) {
+    public void beforeProcess(List<RealVo> realList, Map<Integer, Real> compare) {
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
         //获取雨量配置表
-        Map<Integer, RainfallEntity> rainfallMap = Optional.of(abnormalDetailMapper.fetchAllR())
-                .get()
-                .stream()
-                .collect(Collectors.toMap(RainfallEntity::getSensorCode, a -> a));
-        Map<Integer, RealVo> map = realList.stream()
-                .filter(
-                        e -> ((e.getSenId() % 100) == ConstantConfig.RS)
-                ).collect(Collectors.toMap(RealVo::getSenId, a -> a));
-        doProcess(map, rainfallMap, LocalDateUtil
-                .dateToLocalDateTime(realList.get(0).getTime()),compare);
+        Map<Integer, RainfallEntity> rainfallMap = Optional.of(abnormalDetailMapper.fetchAllR()).get().stream().collect(Collectors.toMap(RainfallEntity::getSensorCode, a -> a));
+        Map<Integer, RealVo> map = realList.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.RS)).collect(Collectors.toMap(RealVo::getSenId, a -> a));
+        doProcess(map, rainfallMap, LocalDateUtil.dateToLocalDateTime(realList.get(0).getTime()), compare);
     }
 
     @Override
     public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, RainfallEntity> configMap) {
     }
 
-
     @Override
-    public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, RainfallEntity> configMap, LocalDateTime times,
-                         final Map<Integer, Real> finalCompareMap) {
+    public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, RainfallEntity> configMap, LocalDateTime times, final Map<Integer, Real> finalCompareMap) {
         final List[] exceptionContainer = {new ArrayList<AbnormalDetailEntity>()};
         configMap.keySet().stream().forEach(e -> {
             RealVo vo = mapval.get(e);
             RainfallEntity rainfallEntity = configMap.get(e);
             if (vo != null) {
-                if(finalCompareMap!=null) {
-                    if (finalCompareMap.size() > 0&&finalCompareMap.get(e) != null) {
-                            double realvalue = (vo.getFACTV() - finalCompareMap.get(e).getRealVal()) * 0.5;
-                            double max = rainfallEntity.getMaxFiveLevel();
-                            double min = rainfallEntity.getMinFiveLevel();
-                            if (realvalue < min) {
-                                exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                        .date(LocalDateUtil
-                                                .dateToLocalDateTime(vo.getTime())
-                                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                        .sensorCode(vo.getSenId())
-                                        .errorValue(realvalue)
-                                        .dataError(DataError.FIVE_LESS_R.getErrorCode())
-                                        .build());
-                            } else if (realvalue > max) {
-                                exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                        .date(LocalDateUtil
-                                                .dateToLocalDateTime(vo.getTime())
-                                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                        .sensorCode(vo.getSenId())
-                                        .errorValue(realvalue)
-                                        .dataError(DataError.FIVE_MORE_R.getErrorCode())
-                                        .build());
-                            }
+                if (finalCompareMap != null) {
+                    if (finalCompareMap.size() > 0 && finalCompareMap.get(e) != null) {
+                        double realvalue = (vo.getFACTV() - finalCompareMap.get(e).getRealVal()) * 0.5;
+                        double max = rainfallEntity.getMaxFiveLevel();
+                        double min = rainfallEntity.getMinFiveLevel();
+                        if (realvalue < min) {
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer().date(LocalDateUtil.dateToLocalDateTime(vo.getTime()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).sensorCode(vo.getSenId()).errorValue(realvalue).dataError(DataError.FIVE_LESS_R.getErrorCode()).build());
+                        } else if (realvalue > max) {
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer().date(LocalDateUtil.dateToLocalDateTime(vo.getTime()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).sensorCode(vo.getSenId()).errorValue(realvalue).dataError(DataError.FIVE_MORE_R.getErrorCode()).build());
+                        }
 
-                            if (rainfallEntity.getNearbySensorCode() != null) {
-                                //附近三个点位
-                                String[] sendorcodeArr = rainfallEntity.getNearbySensorCode().split(",");
-                                final double[] calval = {0};
-                                final double[] num = {0};
-                                IntStream.range(0, sendorcodeArr.length).forEach(i -> {
-                                    int key = Integer.parseInt(sendorcodeArr[i]);
-                                    if (mapval.containsKey(key) && finalCompareMap.containsKey(key)) {
-                                        calval[0] = calval[0] +
-                                                mapval.get(key).getFACTV() - finalCompareMap.get(key).getRealVal();
-                                        num[0]++;
-                                    }
-                                });
-                                if (num[0] > 0) {
-                                    double avgRate = (calval[0] / num[0]);
-                                    double diff = (realvalue - avgRate) >= 0 ? (realvalue - avgRate) : (avgRate - realvalue);
-                                    if (diff / avgRate > rainfallEntity.getNearbyRate()) {
-                                        exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                                .date(LocalDateUtil
-                                                        .dateToLocalDateTime(vo.getTime())
-                                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                                .sensorCode(vo.getSenId())
-                                                .errorValue(realvalue)
-                                                .dataError(DataError.MORENEAR_R.getErrorCode())
-                                                .build());
-                                    }
+                        if (rainfallEntity.getNearbySensorCode() != null) {
+                            //附近三个点位
+                            String[] sendorcodeArr = rainfallEntity.getNearbySensorCode().split(",");
+                            final double[] calval = {0};
+                            final double[] num = {0};
+                            IntStream.range(0, sendorcodeArr.length).forEach(i -> {
+                                int key = Integer.parseInt(sendorcodeArr[i]);
+                                if (mapval.containsKey(key) && finalCompareMap.containsKey(key)) {
+                                    calval[0] = calval[0] + mapval.get(key).getFACTV() - finalCompareMap.get(key).getRealVal();
+                                    num[0]++;
+                                }
+                            });
+                            if (num[0] > 0) {
+                                double avgRate = (calval[0] / num[0]);
+                                double diff = (realvalue - avgRate) >= 0 ? (realvalue - avgRate) : (avgRate - realvalue);
+                                if (diff / avgRate > rainfallEntity.getNearbyRate()) {
+                                    exceptionContainer[0].add
+                                            (new AbnormalDetailEntity.builer()
+                                                    .date(LocalDateUtil.dateToLocalDateTime(vo.getTime())
+                                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                                    .sensorCode(vo.getSenId()).errorValue(realvalue)
+                                                    .dataError(DataError.MORENEAR_R.getErrorCode())
+                                                    .build());
                                 }
                             }
+                        }
                     }
                 }
             } else {
@@ -140,37 +115,26 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
                     }
                     flag++;
                 }
-                String now= times .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                String now = times.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                 if (flag == array.length) {
                     //均不存在 diff+89；判断电压
-                    int code=(rainfallEntity.getSensorCode() -
-                            rainfallEntity.getSensorCode() % 100 + 89);
-                    Real ele =finalCompareMap.get(code);
-                    if (ele != null) {
-                        //测站上传故障
-                        exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                .date(now)
-                                .sensorCode(rainfallEntity.getSensorCode())
-                                .errorPeriod(now)
-                                .equipmentError(DataError.EQ_UPLOAD.getErrorCode())
-                                .build());
-                    } else {
-                        //断电故障
-                        exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                .date(now)
-                                .sensorCode(rainfallEntity.getSensorCode())
-                                .errorPeriod(now)
-                                .equipmentError(DataError.EQ_ELESHUTDOWN.getErrorCode())
-                                .build());
-                    }
+                    int code = (rainfallEntity.getSensorCode() - rainfallEntity.getSensorCode() % 100 + 89);
+                        if (finalCompareMap.containsKey(code)) {
+                            //测站上传故障
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer().date(now).sensorCode(rainfallEntity.getSensorCode()).errorPeriod(now).equipmentError(DataError.EQ_UPLOAD.getErrorCode()).build());
+                        } else {
+                            //断电故障
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer().date(now).sensorCode(rainfallEntity.getSensorCode()).errorPeriod(now).equipmentError(DataError.EQ_ELESHUTDOWN.getErrorCode()).build());
+                        }
                 } else {
                     //测站上传故障
-                    exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                            .date(now)
-                            .sensorCode(rainfallEntity.getSensorCode())
-                            .errorPeriod(now)
-                            .equipmentError(DataError.EQ_UPLOAD.getErrorCode())
-                            .build());
+                    exceptionContainer[0].
+                            add(new AbnormalDetailEntity.builer()
+                                    .date(now)
+                                    .sensorCode(rainfallEntity.getSensorCode())
+                                    .errorPeriod(now)
+                                    .equipmentError(DataError.EQ_UPLOAD.getErrorCode())
+                                    .build());
                 }
             }
         });

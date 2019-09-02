@@ -73,7 +73,7 @@ public  class RealEleValve implements Valve<RealVo,ELEEntity,Real>,ApplicationCo
     @Override
     public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, ELEEntity> configMap, LocalDateTime time, Map<Integer, Real> compare) {
         final List[] exceptionContainer = {new ArrayList<AbnormalDetailEntity>()};
-        mapval.keySet().stream().forEach(e -> {
+        configMap.keySet().stream().forEach(e -> {
             //        最大值最小值比较
             ELEEntity config = configMap.get(e);
             RealVo vo=mapval.get(e);

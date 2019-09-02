@@ -20,6 +20,7 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -73,7 +74,7 @@ public class RealListener {
 
     private void calPackage(List<RealVo> RealVoList) throws Exception {
         RealVo vo = RealVoList.get(0);
-        //splitList(RealVoList, 100);
+        splitList(RealVoList, 1000);
         if (flag.compareAndSet(false, true)) {
             PipelineValve finalValvo=new PipelineValve();
             finalValvo.setHandler(new RealRainfallValve());
@@ -122,7 +123,7 @@ public class RealListener {
                 String before=now.plusMinutes(-5)
                         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                 List<Real> realVos = abnormalDetailMapper.selectBefore5Ele(before);
-                Map<Integer, Real> compareMap=null;
+                Map<Integer, Real> compareMap=new HashMap<>();
                 if (realVos.size() > 0) {compareMap = realVos.stream()
                         .collect(Collectors.toMap(Real::getSensorCode,account -> account));}
                 finalValvo.doInterceptor(voList,compareMap);

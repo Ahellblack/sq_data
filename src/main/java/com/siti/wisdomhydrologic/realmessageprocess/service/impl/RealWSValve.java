@@ -78,12 +78,11 @@ public  class RealWSValve implements Valve<RealVo,WSEntity,Real>,ApplicationCont
     public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, WSEntity> configMap, LocalDateTime time, Map<Integer, Real> compare) {
         final List[] exceptionContainer = {new ArrayList<AbnormalDetailEntity>()};
         if(mapval.size()>0){
-            mapval.keySet().stream().forEach(e -> {
+            configMap.keySet().stream().forEach(e -> {
                 //        最大值最小值比较
                 WSEntity config = configMap.get(e);
                 RealVo vo=mapval.get(e);
                 if(vo!=null) {
-
                     double realvalue= mapval.get(e).getFACTV();
                     double max = config.getLevelMax();
                     double min = config.getLevelMin();

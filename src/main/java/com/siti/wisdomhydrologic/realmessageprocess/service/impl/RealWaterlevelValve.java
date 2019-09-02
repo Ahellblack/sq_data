@@ -110,6 +110,7 @@ public class RealWaterlevelValve implements Valve<RealVo, WaterLevelEntity, Real
                                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                             exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                     .date(date)
+                                    .sensorCode(config.getSensorCode())
                                     .errorPeriod(date)
                                     .equipmentError(one.get("error_code").toString())
                                     .build());
@@ -134,32 +135,32 @@ public class RealWaterlevelValve implements Valve<RealVo, WaterLevelEntity, Real
                     Real ele =finalCompareMap.get(code);
                     if(ele!=null){
                         //测站上传故障
-                        String date = LocalDateUtil
-                                .dateToLocalDateTime(vo.getTime())
+                        String date =time
                                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                         exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                 .date(date)
+                                .sensorCode(config.getSensorCode())
                                 .errorPeriod(date)
                                 .equipmentError(DataError.EQ_UPLOAD.getErrorCode())
                                 .build());
                     }else{
                         //断电故障
-                        String date = LocalDateUtil
-                                .dateToLocalDateTime(vo.getTime())
+                        String date =time
                                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                         exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                 .date(date)
+                                .sensorCode(config.getSensorCode())
                                 .errorPeriod(date)
                                 .equipmentError(DataError.EQ_ELESHUTDOWN.getErrorCode())
                                 .build());
                     }
                 }else{
                     //测站上传故障
-                    String date = LocalDateUtil
-                            .dateToLocalDateTime(vo.getTime())
+                    String date = time
                             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                             .date(date)
+                            .sensorCode(config.getSensorCode())
                             .errorPeriod(date)
                             .equipmentError(DataError.EQ_UPLOAD.getErrorCode())
                             .build());
