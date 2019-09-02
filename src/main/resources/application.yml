@@ -1,0 +1,23 @@
+server:
+  port: 8099
+  context-path: /wisdomhydrologic
+
+quartz:
+  enabled: true
+spring:
+  thymeleaf:
+    mode: LEGACYHTML5
+  http:
+    multipart:  # 文件上传
+      enabled: true
+      max-file-size: 50MB #单个数据大小
+      max-request-size: 100MB #总数据大小
+  profiles:
+     active: dev
+mybatis:
+  configuration:
+    mapUnderscoreToCamelCase: true
+
+version:
+  pcversion: "V1.1" # 版本号
+  build: 1111 # 小版本号

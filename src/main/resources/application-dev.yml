@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: root
+    url: jdbc:mysql://10.1.30.205:3306/wisdomhydrologic?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
+  redis:
+    host: 10.1.30.129
+    password: wh@siti
+    port: 6379
+    pool:
+      max-active: 2000
+      max-wait: 2000
+      min-idle: 1
+      max-idle: 100
+#rabbitmq相关配置
+  rabbitmq:
+     host: 10.1.4.108 #10.1.30.24
+     port: 5672
+     username: wh
+     password: wh@siti
+     publisher-confirms: true
+     publisher-returns: true
+     listener:
+        simple:
+          acknowledge-mode: manual #采用手动应答
+          concurrency: 1
+          max-concurrency: 1
+          retry:
+            enabled: false #是否支持重试
+          prefetch: 1
+     virtual-host: /
+
+logback:
+  logHome: C:/wh/log/
+  logName: wh
+
+sms:
+   account_sid: 8a216da855826478015599e3f66e1411
+   auth_token: 71a6619327734d81957e60f2eeaa2626
+   appid: 8a216da86c8a1a54016c8dc74f1c0182
+   serverip: app.cloopen.com
+   serverport: 8883
+   templateid: 462488
+   flag: false
