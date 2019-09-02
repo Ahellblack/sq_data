@@ -2,6 +2,7 @@ package com.siti.wisdomhydrologic.realmessageprocess.listener;
 
 import com.rabbitmq.client.Channel;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
+import com.siti.wisdomhydrologic.config.RabbitMQConfig;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.RainFallMapper;
 import com.siti.wisdomhydrologic.realmessageprocess.pipeline.PipelineValve;
 import com.siti.wisdomhydrologic.realmessageprocess.service.impl.DayDataServiceImpl;
@@ -10,6 +11,8 @@ import com.siti.wisdomhydrologic.realmessageprocess.vo.DayVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
@@ -40,9 +43,8 @@ public class DayListener {
     private AtomicBoolean flag = new AtomicBoolean(false);
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<DayVo>> receiver;
-/*
     @RabbitListener(queues = RabbitMQConfig.QUEUE_DAY)
-    @RabbitHandler*/
+    @RabbitHandler
     public void dayprocess(List<DayVo> vo, Channel channel, Message message) {
         try {
             if (vo.size() > 0) {

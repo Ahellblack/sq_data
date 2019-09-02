@@ -23,5 +23,5 @@ spring:
      virtual-host: /
 
 logback:
-  logHome: C:/wh/log/
+  logHome: C:/sq_data/log/
   logName: wh

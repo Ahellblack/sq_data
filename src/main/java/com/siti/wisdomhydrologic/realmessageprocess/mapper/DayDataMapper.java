@@ -1,7 +1,7 @@
 package com.siti.wisdomhydrologic.realmessageprocess.mapper;
 
-import com.siti.wisdomhydrologic.datepull.entity.ConfigSensorSectionModule;
-import com.siti.wisdomhydrologic.datepull.vo.DayVo;
+import com.siti.wisdomhydrologic.realmessageprocess.entity.ConfigSensorSectionModule;
+import com.siti.wisdomhydrologic.realmessageprocess.vo.DayVo;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

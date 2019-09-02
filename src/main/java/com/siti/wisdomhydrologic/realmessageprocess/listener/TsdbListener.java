@@ -2,6 +2,7 @@ package com.siti.wisdomhydrologic.realmessageprocess.listener;
 
 import com.rabbitmq.client.Channel;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
+import com.siti.wisdomhydrologic.config.RabbitMQConfig;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.RainFallMapper;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.TSDBMapper;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.TideLevelMapper;
@@ -12,6 +13,8 @@ import com.siti.wisdomhydrologic.realmessageprocess.vo.TSDBVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
@@ -51,9 +54,8 @@ public class TsdbListener {
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<TSDBVo>> receiver;
 
-  /*  @RabbitListener(queues = RabbitMQConfig.QUEUE_TSDB)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_TSDB)
     @RabbitHandler
-  */
     public void tsdbProcess(List<TSDBVo> vo, Channel channel, Message message) {
         try {
             if (vo.size() > 0) {

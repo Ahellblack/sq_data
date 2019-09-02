@@ -73,7 +73,6 @@
         </encoder>
     </appender>
 
-
     <!--多环境日志输出-->
     <!-- 开发环境. 多个使用逗号隔开. -->
     <springProfile name="dev">

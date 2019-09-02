@@ -1,6 +1,6 @@
 package com.siti.wisdomhydrologic.realmessageprocess.mapper;
 
-import com.siti.wisdomhydrologic.datepull.entity.DayEntity;
+import com.siti.wisdomhydrologic.realmessageprocess.entity.DayEntity;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import tk.mybatis.mapper.common.Mapper;

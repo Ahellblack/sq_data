@@ -1,8 +1,9 @@
 package com.siti.wisdomhydrologic.realmessageprocess.service.impl;
 
-import com.siti.wisdomhydrologic.datepull.entity.DayEntity;
-import com.siti.wisdomhydrologic.datepull.mapper.DayMapper;
-import com.siti.wisdomhydrologic.datepull.service.DayToDB;
+
+import com.siti.wisdomhydrologic.realmessageprocess.entity.DayEntity;
+import com.siti.wisdomhydrologic.realmessageprocess.mapper.DayMapper;
+import com.siti.wisdomhydrologic.realmessageprocess.service.DayToDB;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -14,7 +15,7 @@ import java.util.List;
  * @data ${DATA}-9:45
  */
 @Component
-public class DayToDBImpl implements DayToDB{
+public class DayToDBImpl implements DayToDB {
     @Resource
     DayMapper dayMapper;
     @Override

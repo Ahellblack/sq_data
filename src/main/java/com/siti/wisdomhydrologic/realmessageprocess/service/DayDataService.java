@@ -1,6 +1,6 @@
 package com.siti.wisdomhydrologic.realmessageprocess.service;
 
-import com.siti.wisdomhydrologic.datepull.vo.DayVo;
+import com.siti.wisdomhydrologic.realmessageprocess.vo.DayVo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

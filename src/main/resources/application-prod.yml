@@ -22,9 +22,8 @@ spring:
             prefetch: 1
        virtual-host: /
 
-
 logback:
-  logHome: C:/wh/log/
-  logName: wh
+  logHome: /sq_data/log/
+  logName: sq
 
 

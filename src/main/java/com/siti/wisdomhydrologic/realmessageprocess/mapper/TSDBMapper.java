@@ -1,7 +1,8 @@
 package com.siti.wisdomhydrologic.realmessageprocess.mapper;
 
-import com.siti.wisdomhydrologic.datepull.vo.StationVo;
-import com.siti.wisdomhydrologic.datepull.vo.TSDBVo;
+
+import com.siti.wisdomhydrologic.realmessageprocess.vo.StationVo;
+import com.siti.wisdomhydrologic.realmessageprocess.vo.TSDBVo;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;

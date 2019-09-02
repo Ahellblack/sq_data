@@ -1,7 +1,6 @@
 package com.siti.wisdomhydrologic.config;
 
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 /**
  * Created by DC on 2019/6/12.
@@ -9,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * @data ${DATA}-14:58
  */
 @Configuration
-public class ConstantConfig extends WebMvcConfigurerAdapter {
+public class ConstantConfig  {
     //水位71 72  73 75 81 83 84 85 86 89
     public static final int WS=83;
     //潮位

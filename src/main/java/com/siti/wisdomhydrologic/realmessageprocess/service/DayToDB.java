@@ -1,6 +1,7 @@
 package com.siti.wisdomhydrologic.realmessageprocess.service;
 
-import com.siti.wisdomhydrologic.datepull.entity.DayEntity;
+
+import com.siti.wisdomhydrologic.realmessageprocess.entity.DayEntity;
 
 import java.util.List;
 

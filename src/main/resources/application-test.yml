@@ -22,7 +22,7 @@ spring:
             enabled: true #是否支持重试
           prefetch: 1
 logback:
-  logHome: wh/log/
-  logName: wh
+  logHome: /sq_data/log/
+  logName: sq
 
 
