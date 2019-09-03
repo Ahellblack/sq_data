@@ -71,12 +71,19 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
                         double max = rainfallEntity.getMaxFiveLevel();
                         double min = rainfallEntity.getMinFiveLevel();
                         if (realvalue < min) {
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer().date(LocalDateUtil.dateToLocalDateTime(vo.getTime()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).sensorCode(vo.getSenId()).errorValue(realvalue).dataError(DataError.FIVE_LESS_R.getErrorCode()).build());
+                            exceptionContainer[0].add
+                                    (new AbnormalDetailEntity
+                                            .builer()
+                                            .date(LocalDateUtil.dateToLocalDateTime(vo.getTime())
+                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                            .sensorCode(vo.getSenId())
+                                            .errorValue(realvalue)
+                                            .dataError(DataError.FIVE_LESS_R.getErrorCode())
+                                            .build());
                         } else if (realvalue > max) {
                             exceptionContainer[0].add(new AbnormalDetailEntity.builer().date(LocalDateUtil.dateToLocalDateTime(vo.getTime()).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))).sensorCode(vo.getSenId()).errorValue(realvalue).dataError(DataError.FIVE_MORE_R.getErrorCode()).build());
                         }
-
-                        if (rainfallEntity.getNearbySensorCode() != null) {
+                        if (rainfallEntity.getNearbySensorCode() != null&&realvalue!=0&&realvalue!=0.5) {
                             //附近三个点位
                             String[] sendorcodeArr = rainfallEntity.getNearbySensorCode().split(",");
                             final double[] calval = {0};
@@ -91,6 +98,8 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
                             if (num[0] > 0) {
                                 double avgRate = (calval[0] / num[0]);
                                 double diff = (realvalue - avgRate) >= 0 ? (realvalue - avgRate) : (avgRate - realvalue);
+                                double calRate=diff / avgRate;
+
                                 if (diff / avgRate > rainfallEntity.getNearbyRate()) {
                                     exceptionContainer[0].add
                                             (new AbnormalDetailEntity.builer()

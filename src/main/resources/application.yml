@@ -8,7 +8,7 @@ spring:
   thymeleaf:
     mode: LEGACYHTML5
   profiles:
-     active: dev
+     active: test
 mybatis:
   configuration:
     mapUnderscoreToCamelCase: true
