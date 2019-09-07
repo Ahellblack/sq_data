@@ -54,8 +54,8 @@ public class TsdbListener {
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<TSDBVo>> receiver;
 
-   /* @RabbitListener(queues = RabbitMQConfig.QUEUE_TSDB)
-    @RabbitHandler*/
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_TSDB)
+    @RabbitHandler
     public void tsdbProcess(List<TSDBVo> vo, Channel channel, Message message) {
         try {
             if (vo.size() > 0) {

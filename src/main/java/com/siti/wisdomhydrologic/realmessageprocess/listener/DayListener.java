@@ -43,8 +43,8 @@ public class DayListener {
     private AtomicBoolean flag = new AtomicBoolean(false);
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<DayVo>> receiver;
-/*    @RabbitListener(queues = RabbitMQConfig.QUEUE_DAY)
-    @RabbitHandler*/
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_DAY)
+    @RabbitHandler
     public void dayprocess(List<DayVo> vo, Channel channel, Message message) {
         try {
             if (vo.size() > 0) {
