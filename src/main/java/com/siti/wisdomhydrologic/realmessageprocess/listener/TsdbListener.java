@@ -45,7 +45,6 @@ public class TsdbListener {
     @Resource
     private TSDBMapper tsdbMapper;
 
-
     @Resource
     private TSDBServiceImpl tsdbService;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
