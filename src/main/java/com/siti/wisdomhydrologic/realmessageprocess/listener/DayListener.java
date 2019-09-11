@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -51,14 +53,16 @@ public class DayListener {
                 calPackage(vo, channel, message);
             } else {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                logger.error("day queue:{} 数据为空！", LocalDateTime.now().toString());
             }
         } catch (Exception e) {
+            logger.error(e.getMessage());
+        }finally {
             try {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-            logger.error(e.getMessage());
         }
     }
 
@@ -69,25 +73,24 @@ public class DayListener {
         DayVo vo = List.get(0);
         if (flag.compareAndSet(false, true)) {
             PipelineValve valvo=new PipelineValve();
+            valvo.setHandler(new DayRainfallValve());
             new Thread(() -> {
                 multiProcess(valvo);
             }).start();
             receiver = new LinkedBlockingQueue(5);
             maxBatch.set(vo.getMaxBatch());
             sumSize.set(vo.getSumSize());
-            valvo.setHandler(new DayRainfallValve());
-            logger.info("**********Day*********receive start********");
+            logger.info("Day receive start ");
         }
         int currentsize = vo.getCurrentSize();
         int currentbatch = vo.getCurrentBatch();
         int stastus = vo.getStatus();
         if (stastus == 1) {
             if (sumSize.get() == currentsize && maxBatch.get() == currentbatch) {
-                logger.info("**********Day*********success end********");
+                logger.info(" Day success end ");
             }
         }
         receiver.put(List);
-        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         logger.info("Day消费者----总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(),
                 currentbatch, sumSize.get(), currentsize, vo.getStatus());
     }

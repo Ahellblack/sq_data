@@ -72,7 +72,6 @@ public class TSDBFVValve implements Valve<TSDBVo, FVEntity, AbnormalDetailEntity
     public void doProcess(Map<Integer, TSDBVo> mapval, Map<Integer, FVEntity> configMap) {
         if (mapval.size() > 0) {
             final List[] exceptionContainer = {new ArrayList<AbnormalDetailEntity>()};
-            //List<AbnormalDetailEntity> exceptionContainer = new ArrayList<>();
             mapval.keySet().stream().forEach(e -> {
                 FVEntity config = configMap.get(e);
                 if (config != null) {
@@ -131,6 +130,7 @@ public class TSDBFVValve implements Valve<TSDBVo, FVEntity, AbnormalDetailEntity
                                                 .dateToLocalDateTime(vo.getTime())
                                                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                                         .sensorCode(vo.getSENID())
+                                        .errorValue(arrayV[k])
                                         .dataError(DataError.WS_DURA_FV.getErrorCode())
                                         .build());
                             }
@@ -141,7 +141,6 @@ public class TSDBFVValve implements Valve<TSDBVo, FVEntity, AbnormalDetailEntity
                     });
                 }
             });
-
             if (exceptionContainer[0].size() > 0) {
                 abnormalDetailMapper.insertFinal(exceptionContainer[0]);
                 exceptionContainer[0] = null;

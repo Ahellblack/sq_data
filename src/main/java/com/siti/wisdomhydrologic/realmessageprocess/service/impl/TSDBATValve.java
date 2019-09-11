@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -112,7 +113,9 @@ public class TSDBATValve implements Valve<TSDBVo, ATEntity, AbnormalDetailEntity
                                 doubles[0] = arrayV[k];
                             } else {
                                 if (arrayV[k] > doubles[0]) {
-                                    if ((arrayV[k] - doubles[0]) > config.getUpMax()) {
+                                    BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                    BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                    if (frant.subtract(end).doubleValue() > config.getUpMax()) {
                                         exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                                 .date(LocalDateUtil
                                                         .dateToLocalDateTime(vo.getTime())
@@ -122,7 +125,9 @@ public class TSDBATValve implements Valve<TSDBVo, ATEntity, AbnormalDetailEntity
                                                 .build());
                                     }
                                 } else if (arrayV[k] < doubles[0]) {
-                                    if ((doubles[0] - arrayV[k]) > config.getBelowMin()) {
+                                    BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                    BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                    if (end.subtract(frant).doubleValue() > config.getBelowMin()) {
                                         exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                                 .date(LocalDateUtil
                                                         .dateToLocalDateTime(vo.getTime())

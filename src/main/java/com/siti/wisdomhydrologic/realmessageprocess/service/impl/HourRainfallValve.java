@@ -62,13 +62,11 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, AbnormalD
 
     @Override
     public void beforeProcess(List<DayVo> val, Map<Integer, AbnormalDetailEntity> compare) {
-
     }
 
     @Override
     public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, RainfallEntity> configMap) {
         if (mapval.size() > 0) {
-
             final List[] exceptionContainer = {new ArrayList<AbnormalDetailEntity>()};
             configMap.keySet().stream().forEach(e -> {
                 DayVo vo = mapval.get(e);

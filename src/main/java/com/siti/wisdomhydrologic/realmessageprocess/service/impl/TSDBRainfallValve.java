@@ -95,7 +95,7 @@ public class TSDBRainfallValve implements Valve<TSDBVo,RainfallEntity,AbnormalDe
                                         .plusHours(-1)
                                         .plusMinutes(i * 5)
                                         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                                int flag = abnormalDetailMapper.selectRealExist(e, date);
+                                int flag = abnormalDetailMapper.selectRealExist(e+"", date);
                                 if (flag < 1) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(date)

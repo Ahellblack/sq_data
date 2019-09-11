@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -78,7 +79,7 @@ public class TSDBAPValve implements Valve<TSDBVo, APEntity, AbnormalDetailEntity
             mapval.keySet().stream().forEach(e -> {
                 APEntity config = configMap.get(e);
                 if (config != null) {
-                    final double[] doubles = {66666};
+                    final double[] doubles = {99999};
                     final int[] timelimit = {0};
                     TSDBVo vo = mapval.get(e);
                     double[] arrayV = {vo.getV0(), vo.getV1(), vo.getV2(), vo.getV3(), vo.getV4(), vo.getV5(),
@@ -113,7 +114,9 @@ public class TSDBAPValve implements Valve<TSDBVo, APEntity, AbnormalDetailEntity
                             doubles[0] = arrayV[k];
                         } else {
                             if (arrayV[k] > doubles[0]) {
-                                if ((arrayV[k] - doubles[0]) > config.getUpMax()) {
+                                BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                if (frant.subtract(end).doubleValue() > config.getUpMax()) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(LocalDateUtil
                                                     .dateToLocalDateTime(vo.getTime())
@@ -123,43 +126,20 @@ public class TSDBAPValve implements Valve<TSDBVo, APEntity, AbnormalDetailEntity
                                             .build());
                                 }
                             } else if (arrayV[k] < doubles[0]) {
-                                if ((doubles[0] - arrayV[k]) > config.getBelowMin()) {
+                                BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                if (end.subtract(frant).doubleValue()  > config.getBelowMin()) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(LocalDateUtil
                                                     .dateToLocalDateTime(vo.getTime())
                                                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
                                             .sensorCode(vo.getSENID())
+                                            .errorValue(arrayV[k])
                                             .dataError(DataError.CHANGE_SMALL_AP.getErrorCode())
                                             .build());
                                 }
                             }
                         }
-                   /* if (doubles[0] == 66666) {
-                        doubles[0] = realvalue;
-                    } else {
-                        if (realvalue> doubles[0]) {
-                            if ((realvalue - doubles[0]) > config.getUpMax()) {
-                                exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                        .date(LocalDateUtil
-                                                .dateToLocalDateTime(vo.getTime())
-                                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                        .errorValue(realvalue)
-                                        .dataError(DataError.CHANGE_BIG_AP.getErrorCode())
-                                        .build());
-                            }
-                        } else if (realvalue < doubles[0]) {
-                            if ((doubles[0]-realvalue ) > config.getBelowMin()) {
-                                exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                        .date(LocalDateUtil
-                                                .dateToLocalDateTime(vo.getTime())
-                                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                        .sensorCode(vo.getSenId())
-                                        .errorValue(realvalue)
-                                        .dataError(DataError.CHANGE_SMALL_AP.getErrorCode())
-                                        .build());
-                            }
-                        }
-                    }*/
 
                         //判断设备异常
                         if (excepVal != null && !excepVal.equals("")) {

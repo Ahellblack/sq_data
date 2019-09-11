@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -89,20 +90,6 @@ public class TSDBTidelValve implements Valve<TSDBVo, TideLevelEntity, AbnormalDe
                         IntStream.range(j, j + limit).forEach(k -> {
                             if (arrayV[k] == -99) {
                                 flag[0]++;
-                       /* String date = LocalDateUtil.dateToLocalDateTime(vo.getTime())
-                                .plusHours(-1)
-                                .plusMinutes(k * 5)
-                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                        //存在设备异常
-                        if (abnormalDetailMapper.selectRealExist(vo.getSENID(), date) > 0) {
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                    .date(LocalDateUtil
-                                            .dateToLocalDateTime(vo.getTime())
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                    .sensorCode(vo.getSENID())
-                                    .dataError(DataError.RAIN_INTER.getErrorCode())
-                                    .build());
-                        }*/
                             }
                         });
                         if (flag[0] == limit) {
@@ -130,14 +117,13 @@ public class TSDBTidelValve implements Valve<TSDBVo, TideLevelEntity, AbnormalDe
                             temp[0] = arrayV[k];
                             timelimit[0] = 1;
                         }
-
                         if (arrayV[k] == -99) {
                             //实时数据不存在
                             String date = LocalDateUtil.dateToLocalDateTime(vo.getTime())
                                     .plusHours(-1)
                                     .plusMinutes(k * 5)
                                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                            int flag = abnormalDetailMapper.selectRealExist(e, date);
+                            int flag = abnormalDetailMapper.selectRealExist(e+"", date);
                             if (flag < 1) {
                                 exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                         .date(date)
@@ -147,11 +133,13 @@ public class TSDBTidelValve implements Valve<TSDBVo, TideLevelEntity, AbnormalDe
                             }
                         }
                         //5分钟
-                        if (doubles[0] == 66666) {
+                        if (doubles[0] == 99999) {
                             doubles[0] = arrayV[k];
                         } else {
                             if (arrayV[k] > doubles[0]) {
-                                if ((arrayV[k] - doubles[0]) > config.getUpMax()) {
+                                BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                if (frant.subtract(end).doubleValue()  > config.getUpMax()) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(LocalDateUtil
                                                     .dateToLocalDateTime(vo.getTime())
@@ -162,7 +150,9 @@ public class TSDBTidelValve implements Valve<TSDBVo, TideLevelEntity, AbnormalDe
                                             .build());
                                 }
                             } else if (arrayV[k] < doubles[0]) {
-                                if ((doubles[0] - arrayV[k]) > config.getBelowMin()) {
+                                BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                if ((end.subtract(frant).doubleValue()) > config.getBelowMin()) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(LocalDateUtil
                                                     .dateToLocalDateTime(vo.getTime())
@@ -174,39 +164,6 @@ public class TSDBTidelValve implements Valve<TSDBVo, TideLevelEntity, AbnormalDe
                                 }
                             }
                         }
-                /*//最大上升 最大下降
-                */
-                /*if (doubles[0] == 99999) {
-                    doubles[0] = arrayV[k];
-                } else {
-                    if ( arrayV[k] > doubles[0]) {
-                        if ((arrayV[k] - doubles[0]) > config.getUpMax()) {
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                    .date(LocalDateUtil
-                                            .dateToLocalDateTime(vo.getTime())
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                    .sensorCode(vo.getSENID()).fiveBelow(0)
-                                    .fiveAbove(0).hourBelow(0).hourAbove(0).dayBelow(0)
-                                    .dayAbove(0).moreNear(0).lessNear(0).floatingUp(1)
-                                    .floatingDown(0).keepTime(0).continueInterrupt(0)
-                                    .errorValue(0).errorPeriod("").equipmentError("")
-                                    .build());
-                        }
-                    } else if ( arrayV[k] < doubles[0]) {
-                        if ((doubles[0] - arrayV[k]) > config.getBelowMin()) {
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                    .date(LocalDateUtil
-                                            .dateToLocalDateTime(vo.getTime())
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                    .sensorCode(vo.getSENID()).fiveBelow(0)
-                                    .fiveAbove(0).hourBelow(0).hourAbove(0).dayBelow(0)
-                                    .dayAbove(0).moreNear(0).lessNear(0).floatingUp(0)
-                                    .floatingDown(1).keepTime(0).continueInterrupt(0)
-                                    .errorValue(0).errorPeriod("").equipmentError("")
-                                    .build());
-                        }
-                    }
-                }*/
                     });
                 }
             });

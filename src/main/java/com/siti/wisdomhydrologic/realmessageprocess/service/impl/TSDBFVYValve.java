@@ -102,8 +102,6 @@ public class TSDBFVYValve implements Valve<TSDBVo, FVYEntity, AbnormalDetailEnti
                                         .build());
                             }
                         });
-                    } else {
-                        logger.error("tsdbws中断次数不能超过12次");
                     }
                     String excepVal = config.getExceptionValue();
                     IntStream.range(0, arrayV.length).forEach(k -> {

@@ -8,7 +8,7 @@ import com.siti.wisdomhydrologic.realmessageprocess.mapper.TSDBMapper;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.TideLevelMapper;
 import com.siti.wisdomhydrologic.realmessageprocess.mapper.WaterLevelMapper;
 import com.siti.wisdomhydrologic.realmessageprocess.pipeline.PipelineValve;
-import com.siti.wisdomhydrologic.realmessageprocess.service.impl.TSDBServiceImpl;
+import com.siti.wisdomhydrologic.realmessageprocess.service.impl.*;
 import com.siti.wisdomhydrologic.realmessageprocess.vo.TSDBVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +80,18 @@ public class TsdbListener {
         TSDBVo vo = List.get(0);
         if (flag.compareAndSet(false, true)) {
             PipelineValve finalValvo=new PipelineValve();
+            finalValvo.setHandler(new TSDBWaterlevelValve());
+            finalValvo.setHandler(new TSDBTidelValve());
+            finalValvo.setHandler(new TSDBRainfallValve());
+            finalValvo.setHandler(new TSDBAPValve());
+            finalValvo.setHandler(new TSDBATValve());
+            finalValvo.setHandler(new TSDBEValve());
+            finalValvo.setHandler(new TSDBFVValve());
+            finalValvo.setHandler(new TSDBFVYValve());
+            finalValvo.setHandler(new TSDBWDValve());
+            finalValvo.setHandler(new TSDBWSValve());
+
+
             new Thread(() -> {
                 multiProcess(finalValvo);
             }).start();
@@ -124,7 +136,6 @@ public class TsdbListener {
                 flag.compareAndSet(true, false);
                 break;
             }
-
         }
     }
 

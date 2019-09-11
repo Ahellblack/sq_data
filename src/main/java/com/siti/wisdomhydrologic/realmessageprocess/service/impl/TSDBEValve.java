@@ -14,6 +14,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -101,18 +102,6 @@ public class TSDBEValve implements Valve<TSDBVo, ELEEntity, AbnormalDetailEntity
                         }
                     });
                     IntStream.range(0, arrayV.length).forEach(k -> {
-                       /* String date = LocalDateUtil.dateToLocalDateTime(vo.getTime())
-                                .plusHours(-1)
-                                .plusMinutes(k * 5)
-                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                        //存在设备异常
-                        if (abnormalDetailMapper.selectRealExist(vo.getSENID(), date) > 0) {
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                    .date(date)
-                                    .sensorCode(vo.getSENID())
-                                    .equipmentError(DataError.EQ_WATER.getErrorCode())
-                                    .build());
-                        }*/
                         if (temp[0] == arrayV[k]) {
                             timelimit[0]++;
                             if (timelimit[0] > config.getDuration() / 5) {
@@ -132,7 +121,9 @@ public class TSDBEValve implements Valve<TSDBVo, ELEEntity, AbnormalDetailEntity
                             doubles[0] = arrayV[k];
                         } else {
                             if (arrayV[k] > doubles[0]) {
-                                if ((arrayV[k] - doubles[0]) > config.getUpMax()) {
+                                BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                if (frant.subtract(end).doubleValue()  > config.getUpMax()) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(LocalDateUtil
                                                     .dateToLocalDateTime(vo.getTime())
@@ -142,7 +133,9 @@ public class TSDBEValve implements Valve<TSDBVo, ELEEntity, AbnormalDetailEntity
                                             .build());
                                 }
                             } else if (arrayV[k] < doubles[0]) {
-                                if ((doubles[0] - arrayV[k]) > config.getBelowMin()) {
+                                BigDecimal frant= BigDecimal.valueOf(arrayV[k]);
+                                BigDecimal end= BigDecimal.valueOf(doubles[0]);
+                                if (end.subtract(frant).doubleValue()  > config.getBelowMin()) {
                                     exceptionContainer[0].add(new AbnormalDetailEntity.builer()
                                             .date(LocalDateUtil
                                                     .dateToLocalDateTime(vo.getTime())
@@ -166,7 +159,7 @@ public class TSDBEValve implements Valve<TSDBVo, ELEEntity, AbnormalDetailEntity
 
     @Override
     public void doProcess(Map<Integer, TSDBVo> val, Map<Integer, ELEEntity> configMap, LocalDateTime time, Map<Integer, AbnormalDetailEntity> compare) {
-
+        System.out.println("123");
     }
 
 }
