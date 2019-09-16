@@ -7,10 +7,10 @@ spring:
 #rabbitmq相关配置
   #rabbitmq相关配置
   rabbitmq:
-     host: 10.1.4.108 #10.1.30.24
+     host: 10.1.30.202 #10.1.30.24
      port: 5672
-     username: wh
-     password: wh@siti
+     username: siti
+     password: siti@sq
      publisher-confirms: true
      publisher-returns: true
      listener:

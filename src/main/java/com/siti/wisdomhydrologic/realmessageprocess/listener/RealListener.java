@@ -48,8 +48,8 @@ public class RealListener {
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<RealVo>> receiver;
 
-    /*@RabbitListener(queues = RabbitMQConfig.QUEUE_REAL)
-    @RabbitHandler*/
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL)
+    @RabbitHandler
     public void realProcess(List<RealVo> RealVo, Channel channel, Message message) {
         try {
             if (RealVo.size() > 0) {
