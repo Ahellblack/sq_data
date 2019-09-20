@@ -13,14 +13,12 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -67,7 +65,7 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
             if (vo != null) {
                 if (finalCompareMap != null) {
                     if (finalCompareMap.size() > 0 && finalCompareMap.get(e) != null) {
-                        double realvalue = (vo.getFACTV() - finalCompareMap.get(e).getRealVal()) * 0.5;
+                        double realvalue = (vo.getFACTV() - finalCompareMap.get(e).getRealVal());
                         double max = rainfallEntity.getMaxFiveLevel();
                         double min = rainfallEntity.getMinFiveLevel();
                         if (realvalue < min) {

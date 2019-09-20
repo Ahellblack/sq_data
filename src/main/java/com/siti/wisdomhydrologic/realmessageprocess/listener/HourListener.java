@@ -64,11 +64,11 @@ public class HourListener {
         } catch (Exception e) {
             logger.error(e.getMessage());
         }finally {
-           /* try {
+            try {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
             } catch (IOException e1) {
                 e1.printStackTrace();
-            }*/
+            }
         }
     }
 

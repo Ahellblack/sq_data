@@ -10,7 +10,6 @@ import java.util.Date;
  */
 @Table(name = "real_5min_sensor_data")
 public class RealFiveminSensorDataEntity {
-
     @Id
     private Integer id;
     //传感器编号

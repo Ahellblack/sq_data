@@ -90,8 +90,6 @@ public class TsdbListener {
             finalValvo.setHandler(new TSDBFVYValve());
             finalValvo.setHandler(new TSDBWDValve());
             finalValvo.setHandler(new TSDBWSValve());
-
-
             new Thread(() -> {
                 multiProcess(finalValvo);
             }).start();
