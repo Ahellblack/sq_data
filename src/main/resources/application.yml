@@ -1,5 +1,5 @@
 server:
-  port: 8077
+  port: 8066
   context-path: /sq
 
 quartz:
@@ -8,7 +8,7 @@ spring:
   thymeleaf:
     mode: LEGACYHTML5
   profiles:
-     active: test
+     active: prod
 mybatis:
   configuration:
     mapUnderscoreToCamelCase: true

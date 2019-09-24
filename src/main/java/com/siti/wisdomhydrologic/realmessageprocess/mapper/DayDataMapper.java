@@ -107,7 +107,7 @@ public interface DayDataMapper {
 
 
     @Insert("<script>" +
-            "INSERT INTO `wisdomhydrologic`.`history_hour_sensor_data` " +
+            "INSERT INTO `history_hour_sensor_data` " +
             "(`sensor_code`, `sensor_data_value`, `sensor_type_id`, `sensor_type_name`, `sensor_data_unit`," +
             " `sensor_data_upload_time`,`sensor_avg_data`, `sensor_max_data`, `sensor_max_data_time`, `sensor_min_data`, `sensor_min_data_time`, " +
             "`sensor_data_value_flag`, `sensor_avg_data_value_flag`, `sensor_max_data_value_flag`, `sensor_min_data_value_flag`," +
