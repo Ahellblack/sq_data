@@ -2,12 +2,12 @@ package com.siti.wisdomhydrologic.analysis.listener;
 
 import com.rabbitmq.client.Channel;
 import com.siti.wisdomhydrologic.analysis.entity.Real;
+import com.siti.wisdomhydrologic.analysis.pipeline.valve.*;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
 import com.siti.wisdomhydrologic.config.RabbitMQConfig;
 import com.siti.wisdomhydrologic.analysis.mapper.*;
 import com.siti.wisdomhydrologic.analysis.pipeline.PipelineValve;
 import com.siti.wisdomhydrologic.analysis.service.impl.DayDataServiceImpl;
-import com.siti.wisdomhydrologic.analysis.pipeline.valve.HourRainfallValve;
 import com.siti.wisdomhydrologic.analysis.vo.DayVo;
 import com.siti.wisdomhydrologic.util.LocalDateUtil;
 import org.slf4j.Logger;
@@ -78,7 +78,14 @@ public class HourListener {
         splitList(List, 100);
         if (flag.compareAndSet(false, true)) {
             PipelineValve finalValvo=new PipelineValve();
-            finalValvo.setHandler(new HourRainfallValve());
+            finalValvo.setHandler(new HourAirPressValve());
+            finalValvo.setHandler(new HourAirTempratrueValve());
+            finalValvo.setHandler(new HourFlowVelocitylValve());
+            finalValvo.setHandler(new HourlWaterLevelValve());
+            finalValvo.setHandler(new HourTideValve());
+            finalValvo.setHandler(new HourWindDirectionValve());
+            finalValvo.setHandler(new HourWindSpeedValve());
+
             //HourRegressionValve
             new Thread(() -> {
                 multiProcess(finalValvo);
