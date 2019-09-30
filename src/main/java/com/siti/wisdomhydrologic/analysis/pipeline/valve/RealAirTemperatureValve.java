@@ -61,7 +61,7 @@ public  class RealAirTemperatureValve implements Valve<RealVo,ATEntity,Real>,App
                 e -> (e.split( "," )[1].contains( one.getSenId() % 100 + "" ))
         ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
         doProcess(map, config, LocalDateUtil
-                .dateToLocalDateTime(realList.get(0).getTime()),maps);
+                .dateToLocalDateTime(one.getTime()),maps);
     }
 
 

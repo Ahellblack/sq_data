@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.analysis.regression;
+package com.siti.wisdomhydrologic.analysis.pipeline.regression;
 
 import com.siti.wisdomhydrologic.analysis.entity.AbnormalDetailEntity;
 import com.siti.wisdomhydrologic.analysis.entity.RegressionEntity;
@@ -26,13 +26,14 @@ public abstract class AbstractRegressionEstimate {
     }
 
     private static class InnerClass{
-        private static Algorithm[] algorithmArray={new ArgsOneAlgorithm()
+        private final static Algorithm[] algorithmArray={new ArgsOneAlgorithm()
                 ,new ArgsTwoAlgorithm(),new ArgsThreeAlgorithm()};
     }
 
     public void initAlgorithm() {
         this.algorithmArray = InnerClass.algorithmArray;
     }
+
 
     public abstract AbnormalDetailEntity compute(DayVo vo, Map<Integer, DayVo> data, RegressionEntity config);
 }

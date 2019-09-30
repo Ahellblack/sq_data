@@ -71,7 +71,6 @@ public class RealListener {
     /**
      * 判断是否丢包记录日志
      */
-
     private void calPackage(List<RealVo> RealVoList) throws Exception {
         RealVo vo = RealVoList.get(0);
         //------------------------real数据入库-------------------
@@ -88,7 +87,7 @@ public class RealListener {
             finalValvo.setHandler(new RealFlowVelocityValve());
             // special
             finalValvo.setHandler(new RealRainfallValve());
-            //-----------------初始化消费端-----------------------
+            //------------------------初始化消费端-----------------------
             new Thread(() -> {
                 multiProcess(finalValvo);
             }).start();
@@ -122,7 +121,7 @@ public class RealListener {
         Runnable fetchTask = () -> {
             List<RealVo> voList = receiver.poll();
             if (voList != null) {
-                //-------一天内的数据-------
+                //-------------------一天内的数据-----------------
                 String before=LocalDateUtil
                         .dateToLocalDateTime(voList.get(0).getTime()).plusHours(-2)
                         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -147,7 +146,7 @@ public class RealListener {
             }
         }
     }
-
+    //--------------------入库-------------------
     public boolean splitList(List arrayList, int size) {
         try {
             int all = arrayList.size();

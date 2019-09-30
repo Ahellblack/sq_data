@@ -1,6 +1,7 @@
 package com.siti.wisdomhydrologic.analysis.listener;
 
 import com.rabbitmq.client.Channel;
+import com.siti.wisdomhydrologic.analysis.entity.Real;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
 import com.siti.wisdomhydrologic.config.RabbitMQConfig;
 import com.siti.wisdomhydrologic.analysis.mapper.*;
@@ -8,6 +9,7 @@ import com.siti.wisdomhydrologic.analysis.pipeline.PipelineValve;
 import com.siti.wisdomhydrologic.analysis.service.impl.DayDataServiceImpl;
 import com.siti.wisdomhydrologic.analysis.pipeline.valve.HourRainfallValve;
 import com.siti.wisdomhydrologic.analysis.vo.DayVo;
+import com.siti.wisdomhydrologic.util.LocalDateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -17,12 +19,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -33,17 +39,9 @@ import java.util.stream.IntStream;
 @Component
 @Transactional
 public class HourListener {
-    @Resource
-    private TSDBMapper tsdbMapper;
-    @Resource
-    RainFallMapper rainFallMapper;
-    @Resource
-    TideLevelMapper tideLevelMapper;
-    @Resource
-    WaterLevelMapper waterLevelMapper;
-    @Resource
-    private DayDataMapper dayDataMapper;
 
+    @Resource
+    AbnormalDetailMapper abnormalDetailMapper;
     @Resource
     private DayDataServiceImpl dayDataService;
 
@@ -114,7 +112,19 @@ public class HourListener {
         Runnable fetchTask = () -> {
             List<DayVo> voList = receiver.poll();
             if (voList != null) {
-                finalValvo.doInterceptor(voList);
+                //-------------------一天内的数据-----------------
+                List<Real> realVos = abnormalDetailMapper.selectHourPeriod(LocalDateUtil
+                        .dateToLocalDateTime(voList.get(0).getTime()).plusHours(-1)
+                        .format( DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),LocalDateUtil
+                        .dateToLocalDateTime(voList.get(0).getTime())
+                        .format( DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                Map<String, Real> compareMap=new HashMap<>();
+                if (realVos.size() > 0) {
+                    compareMap = realVos.stream()
+                            .collect( Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
+                                    ,account -> account));
+                }
+                finalValvo.doInterceptor(voList,compareMap);
             }
         };
         while (true) {

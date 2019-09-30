@@ -1,3 +1,4 @@
+/*
 package com.siti.wisdomhydrologic.analysis.listener;
 
 import com.rabbitmq.client.Channel;
@@ -6,7 +7,6 @@ import com.siti.wisdomhydrologic.config.RabbitMQConfig;
 import com.siti.wisdomhydrologic.analysis.mapper.RainFallMapper;
 import com.siti.wisdomhydrologic.analysis.pipeline.PipelineValve;
 import com.siti.wisdomhydrologic.analysis.service.impl.DayDataServiceImpl;
-import com.siti.wisdomhydrologic.analysis.pipeline.valve.DayRainfallValve;
 import com.siti.wisdomhydrologic.analysis.vo.DayVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+*/
 /**
  * Created by DC on 2019/6/12.
  *
  * @data ${DATA}-15:23
- */
+ *//*
+
 @Component
 @Transactional
 public class DayListener {
@@ -65,14 +67,15 @@ public class DayListener {
         }
     }
 
-    /**
+    */
+/**
      * 判断是否丢包记录日志
-     */
+     *//*
+
     private void calPackage(List<DayVo> List, Channel channel, Message message) throws Exception {
         DayVo vo = List.get(0);
         if (flag.compareAndSet(false, true)) {
             PipelineValve valvo=new PipelineValve();
-            valvo.setHandler(new DayRainfallValve());
             new Thread(() -> {
                 multiProcess(valvo);
             }).start();
@@ -94,9 +97,11 @@ public class DayListener {
                 currentbatch, sumSize.get(), currentsize, vo.getStatus());
     }
 
-    /**
+    */
+/**
      * 触发一次消费任务
-     */
+     *//*
+
     private void multiProcess(PipelineValve valvo) {
         ColorsExecutor colors = new ColorsExecutor();
         colors.init();
@@ -132,3 +137,4 @@ public class DayListener {
 
 
 
+*/

@@ -1,15 +1,11 @@
 package com.siti.wisdomhydrologic.analysis.pipeline.valve;
 
-import com.siti.wisdomhydrologic.analysis.entity.Real;
-import com.siti.wisdomhydrologic.analysis.entity.RegressionEntity;
-import com.siti.wisdomhydrologic.analysis.pipeline.regression.RegressionEstimate;
-import com.siti.wisdomhydrologic.analysis.vo.RealVo;
-import com.siti.wisdomhydrologic.config.ConstantConfig;
-import com.siti.wisdomhydrologic.analysis.entity.AbnormalDetailEntity;
-import com.siti.wisdomhydrologic.analysis.entity.RainfallEntity;
+import com.siti.wisdomhydrologic.analysis.entity.*;
 import com.siti.wisdomhydrologic.analysis.mapper.AbnormalDetailMapper;
 import com.siti.wisdomhydrologic.analysis.pipeline.Valve;
+import com.siti.wisdomhydrologic.analysis.pipeline.regression.RegressionEstimate;
 import com.siti.wisdomhydrologic.analysis.vo.DayVo;
+import com.siti.wisdomhydrologic.config.ConstantConfig;
 import com.siti.wisdomhydrologic.util.LocalDateUtil;
 import com.siti.wisdomhydrologic.util.enumbean.DataError;
 import org.slf4j.Logger;
@@ -18,6 +14,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -29,7 +26,7 @@ import java.util.stream.Collectors;
 
 
 @Component
-public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, ApplicationContextAware {
+public class HourlWaterLevelValve implements Valve<DayVo, WaterLevelEntity, Real>, ApplicationContextAware {
 
     private final Logger logger = LoggerFactory.getLogger( this.getClass() );
 
@@ -43,12 +40,12 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, Ap
         DayVo one = realList.get( 0 );
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
 
-        int com = ConstantConfig.RS;
+        int com = ConstantConfig.WS;
         //----------------------获取雨量配置表--------------------------------
-        Map<Integer, RainfallEntity> rainfallMap = Optional.of(abnormalDetailMapper.fetchAllR())
+        Map <Integer, WaterLevelEntity> rainfallMap = Optional.of( abnormalDetailMapper.fetchAllW() )
                 .get()
                 .stream()
-                .collect(Collectors.toMap(RainfallEntity::getSensorCode, a -> a));
+                .collect(Collectors.toMap(WaterLevelEntity::getSensorCode, a -> a));
         //--------------------筛选出雨量实时数据-----------------------------
         Map<Integer, DayVo> map = realList.stream()
                 .filter(
@@ -60,7 +57,7 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, Ap
     }
 
     @Override
-    public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, RainfallEntity> configMap, LocalDateTime time
+    public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, WaterLevelEntity> configMap, LocalDateTime time
             , Map<String, Real> compare) {
         try {
             //-------------回归模型------------------------
@@ -78,7 +75,7 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, Ap
             }
             //--------------------筛选出小时内相关雨量-------------------------------
             Map <String, Real> maps = compare.keySet().stream().filter(
-                    e -> (e.split( "," )[1].contains(  ConstantConfig.RS+ "" ))
+                    e -> (e.split( "," )[1].contains(  ConstantConfig.WS+ "" ))
             ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
             //-------------------------------------------------
             if (mapval.size() > 0) {
@@ -86,27 +83,27 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, Ap
                 configMap.keySet().stream().forEach( e -> {
                     DayVo vo = mapval.get( e );
                     boolean flag=false;
-                    RainfallEntity config = configMap.get( e );
+                    WaterLevelEntity config = configMap.get( e );
                     if (vo != null) {
                         //---------------------最大值，最小值---------------------------------
-                        if (vo.getMinV() < config.getMinHourLevel()) {
+                        if (vo.getMinV() < config.getLevelMin()) {
                             exceptionContainer[0].add( new AbnormalDetailEntity.builer()
                                     .date( LocalDateUtil
                                             .dateToLocalDateTime( vo.getTime() )
                                             .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
                                     .sensorCode( vo.getSenId() )
                                     .errorValue( vo.getMinV() )
-                                    .dataError( DataError.HOUR_LESS_RainFall.getErrorCode() )
+                                    .dataError( DataError.HOUR_LESS_WATERLEVEL.getErrorCode() )
                                     .build());
                             flag=true;
-                        } else if (vo.getMaxV() > config.getMaxHourLevel()) {
+                        } else if (vo.getMaxV() > config.getLevelMax()) {
                             exceptionContainer[0].add( new AbnormalDetailEntity.builer()
                                     .date( LocalDateUtil
                                             .dateToLocalDateTime( vo.getTime() )
                                             .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
                                     .sensorCode( vo.getSenId() )
                                     .errorValue( vo.getMaxV() )
-                                    .dataError( DataError.HOUR_MORE_RainFall.getErrorCode() )
+                                    .dataError( DataError.HOUR_MORE_WATERLEVEL.getErrorCode() )
                                     .build() );
                             flag=true;
                         }
@@ -140,25 +137,11 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, Ap
                                         .build() );
                             }
                         }else{
-                            //TODO has a problem
-                            double[] compares={999};
-                            int[] times={0};
-                            maps.entrySet().stream().forEach(k->{
-                                if(k.getValue().getRealVal()!=compares[0]){
-                                    compares[0]=k.getValue().getRealVal();
-                                }else{
-                                    times[0]++;
-                                }
-                            });
-                            if (times[0]!=0) {
-
-                            }else{
                                 exceptionContainer[0].add( new AbnormalDetailEntity.builer()
                                         .date( time.format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
                                         .sensorCode( config.getSensorCode() )
                                         .dataError( DataError.CAL_EXCEPTION.getErrorCode() )
                                         .build() );
-                            }
                         }
                     }
                 } );
@@ -168,13 +151,13 @@ public class HourRainfallValve implements Valve<DayVo, RainfallEntity, Real>, Ap
                 }
             }
         }catch (Exception e){
-            logger.error( "HourRainfallValve异常：{}", e.getMessage() );
+            logger.error( "HourWaterLevelValve异常：{}", e.getMessage() );
 
         }
     }
 
     @Override
-    public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, RainfallEntity> configMap) {
+    public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, WaterLevelEntity> configMap) {
 
     }
 

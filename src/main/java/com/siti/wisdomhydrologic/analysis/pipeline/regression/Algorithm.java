@@ -1,4 +1,4 @@
-package com.siti.wisdomhydrologic.analysis.regression;
+package com.siti.wisdomhydrologic.analysis.pipeline.regression;
 
 
 import java.util.Map;

@@ -47,7 +47,6 @@ public  class RealAirPressValve implements Valve<RealVo,APEntity,Real>,Applicati
         RealVo one = realList.get( 0 );
         //----------------------获取气压配置表---------------------------
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
-        //获取at
         Map<Integer, APEntity> config = Optional.of(abnormalDetailMapper.fetchAllAP())
                 .get()
                 .stream()
@@ -57,12 +56,12 @@ public  class RealAirPressValve implements Valve<RealVo,APEntity,Real>,Applicati
                 .filter(
                         e -> ((e.getSenId()%100)==ConstantConfig.WAP)
                 ).collect(Collectors.toMap(RealVo::getSenId, a -> a));
-        //---------------------筛选出潮位历史数据---------
+        //---------------------筛选出潮位历史数据-----------------------
         Map <String, Real> maps = compare.keySet().stream().filter(
                 e -> (e.split( "," )[1].contains( one.getSenId() % 100 + "" ))
         ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
         doProcess(map,config, LocalDateUtil
-                .dateToLocalDateTime(realList.get(0).getTime()),maps);
+                .dateToLocalDateTime(one.getTime()),maps);
     }
 
 
@@ -129,7 +128,7 @@ public  class RealAirPressValve implements Valve<RealVo,APEntity,Real>,Applicati
                             }
                         }
                     }
-                    //------------------------------过程线分析----------------------
+                    //------------------------------过程线分析-----------------------
                     if (!flag) {
                         List <Double> continueData = finalCompareMap.entrySet()
                                 .stream().map( f -> f.getValue().getRealVal() )
