@@ -86,12 +86,13 @@ public interface AbnormalDetailMapper extends Mapper<AbnormalDetailEntity> {
     @Select("select * from abnormal_electric")
     List<ELEEntity> fetchAllELE();
 
-    @Select("<script>SELECT * FROM `real` where time = #{time} </script>\n")
-    List<Real> selectBefore5Ele( @Param("time") String time);
+
 
     @Select("<script>select * from config_regression_function</script>\n")
     List<RegressionEntity> getRegression();
 
+    @Select(" select * from real where time = #{time}")
+    List<Real> selectBefore5Ele( @Param("time") String time);
 
     @Select("<script>select * from real  where sensor_code = #{sensorcode} and time=DATE_ADD(#{time},INTERVAL -5 MINUTE)</script>\n")
     RealVo select5Ele(@Param("sensorcode") String sensorcode, @Param("time") String time);
@@ -103,10 +104,10 @@ public interface AbnormalDetailMapper extends Mapper<AbnormalDetailEntity> {
     @Select("<script>SELECT count(1) FROM `real` where sensor_code=#{sensorCode} and time=#{time}</script>")
     int selectRealExist(@Param("sensorCode") String sensorCode, @Param("time") String time);
 
-    @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time>#{time}</script>")
+    @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time &gt; #{time}</script>")
     List<Real> selectBeforeFiveReal(@Param("time") String time);
 
-    @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time>#{beforeTime} and time<#{endTime}</script>")
+    @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time &gt; #{beforeTime} and time &lt; #{endTime}</script>")
     List<Real> selectHourPeriod(@Param("beforeTime") String time,@Param("endTime") String end);
 
     @Insert("<script>" +
