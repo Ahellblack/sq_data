@@ -10,7 +10,7 @@ public enum DataError {
 	UP_MAX_TIDE("data_026","潮位上升超过历史上升最大值"),
 	DOWN_MAX_TIDE("data_034","潮位下降超过历史下降最大值"),
 	DURING_TIDE("data_042","潮位数据不变时长过长"),
-	BREAK_TIDE("data_78","潮位中断"),
+	BREAK_TIDE("data_002","潮位中断"),
 	HOUR_MORE_TIDE("data_010","潮位大于历史最大值"),//new
 	HOUR_LESS_TIDE("data_018","潮位小于历史最小值"),//new
 
@@ -77,7 +77,7 @@ public enum DataError {
 	EQ_TIDE("eq_6","潮位计算服务异常"),
 	EQ_WATER("eq_7","水位计算服务异常"),
 	INTENT_WATER("data_79","水位中断"), // 和 WS_INTER_WL 有什么区分
-	WRONG_CONFIG("data_80","RTU参数配置异常"),// 和 INTENT_WATER_UPMAX 有什么区分
+	WRONG_CONFIG("eq_030","RTU参数配置异常"),
 	UPLOAD_EXCEPITON("eq_019","测站上传故障"),  //
 	REGRESSION_EXCEPTION("md_1","回归模型异常"),  // 拆分出来，雨量、水位、潮位、风速、风向、流速、气温、气压等 data_075-data_082
 	REGRESSION_NOT_FOUND("md_2","模型数据丢失"), // 模型缺失的话，不用进行回归模型的判断
