@@ -104,8 +104,10 @@ public interface AbnormalDetailMapper extends Mapper<AbnormalDetailEntity> {
     @Select("<script>SELECT count(1) FROM `real` where sensor_code=#{sensorCode} and time=#{time}</script>")
     int selectRealExist(@Param("sensorCode") String sensorCode, @Param("time") String time);
 
-    @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time &gt; #{time}</script>")
-    List<Real> selectBeforeFiveReal(@Param("time") String time);
+    @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time &gt; #{time} and" +
+            " SUBSTRING(sensor_code, -2)=#{code}" +
+            " order by time desc</script>")
+    List<Real> selectBeforeFiveReal(@Param("time") String time,@Param("code") int code);
 
     @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time &gt; #{beforeTime} and time &lt; #{endTime}</script>")
     List<Real> selectHourPeriod(@Param("beforeTime") String time,@Param("endTime") String end);

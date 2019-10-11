@@ -26,11 +26,5 @@ public  class PipelineValve extends AbstractProcessPipeline {
         });
     }
 
-    @Override
-    public void doInterceptor(List val,Map real) {
-        IntStream.range(0, handlerChain.size()).forEach(i -> {
-            handlerChain.get(i).beforeProcess(val,real);
-        });
-    }
 }
 

@@ -21,7 +21,7 @@ public class TideLevelEntity {
     double compare;//与5分钟水位的差值
     double upMax;//历史最高上涨量
     double belowMin;//历史最高降低量
-    double duration;//准许水位不变的最高时长
+    int duration;//准许水位不变的最高时长
     Date createTime;//
     String exceptionValue;
 
@@ -105,11 +105,11 @@ public class TideLevelEntity {
         this.belowMin = belowMin;
     }
 
-    public double getDuration() {
+    public int getDuration() {
         return duration;
     }
 
-    public void setDuration(double duration) {
+    public void setDuration(int duration) {
         this.duration = duration;
     }
 

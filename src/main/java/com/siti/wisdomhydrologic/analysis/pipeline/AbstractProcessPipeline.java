@@ -22,10 +22,6 @@ public abstract class AbstractProcessPipeline {
         handlerChain.add(indecator);
     }
 
-    /**
-     * 处理方法
-     */
-    public abstract void doInterceptor(List<Valve> val, Map previous) ;
 
     /**
      * 处理方法

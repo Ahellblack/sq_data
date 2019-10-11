@@ -60,11 +60,11 @@ public class RealListener {
             logger.error(e.getMessage());
         }finally {
             //----------------------后面可以优化---------------------
-            try {
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+//            try {
+//                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+//            } catch (IOException e1) {
+//                e1.printStackTrace();
+//            }
         }
     }
 
@@ -121,18 +121,7 @@ public class RealListener {
         Runnable fetchTask = () -> {
             List<RealVo> voList = receiver.poll();
             if (voList != null) {
-                //-------------------一天内的数据-----------------
-                String before=LocalDateUtil
-                        .dateToLocalDateTime(voList.get(0).getTime()).plusHours(-2)
-                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                List<Real> realVos = abnormalDetailMapper.selectBeforeFiveReal(before);
-                Map<String, Real> compareMap=new HashMap<>();
-                if (realVos.size() > 0) {
-                    compareMap = realVos.stream()
-                            .collect(Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
-                                    ,account -> account));
-                }
-                finalValvo.doInterceptor(voList,compareMap);
+                finalValvo.doInterceptor(voList);
             }
         };
         while (true) {

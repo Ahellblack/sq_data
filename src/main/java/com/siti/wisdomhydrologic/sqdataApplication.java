@@ -18,7 +18,9 @@ public class sqdataApplication extends SpringBootServletInitializer{
 	public static void main(String[] args) {
 		SpringApplication.run(sqdataApplication.class, args);
 	}
+    @Override
     protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
         return builder.sources(sqdataApplication.class);
     }
+
 }

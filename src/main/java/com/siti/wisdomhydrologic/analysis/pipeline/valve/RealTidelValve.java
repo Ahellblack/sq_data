@@ -2,6 +2,7 @@ package com.siti.wisdomhydrologic.analysis.pipeline.valve;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.siti.wisdomhydrologic.analysis.entity.WaterLevelEntity;
 import com.siti.wisdomhydrologic.config.ConstantConfig;
 import com.siti.wisdomhydrologic.analysis.entity.AbnormalDetailEntity;
 import com.siti.wisdomhydrologic.analysis.entity.Real;
@@ -21,10 +22,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -34,7 +32,7 @@ import java.util.stream.IntStream;
  * @data ${DATA}-9:54
  */
 @Component
-public class RealTidelValve implements Valve <RealVo, TideLevelEntity, Real>, ApplicationContextAware {
+public class RealTidelValve implements Valve <RealVo, Real,TideLevelEntity>, ApplicationContextAware {
 
     private final Logger logger = LoggerFactory.getLogger( this.getClass() );
 
@@ -43,33 +41,40 @@ public class RealTidelValve implements Valve <RealVo, TideLevelEntity, Real>, Ap
     AbnormalDetailMapper abnormalDetailMapper = null;
 
     @Override
-    public void beforeProcess(List <RealVo> realList, Map <String, Real> compare) {
-        RealVo one = realList.get( 0 );
+    public void beforeProcess(List <RealVo> realData) {
         abnormalDetailMapper = getBean( AbnormalDetailMapper.class );
+        //-------------------一天内的数据-----------------
+        String before=LocalDateUtil
+                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before,ConstantConfig.TS);
         //----------------------获取潮位配置表---------------------------
-        Map <Integer, TideLevelEntity> tideLevelMap = Optional.of( abnormalDetailMapper.fetchAllT() )
+        Map <Integer, TideLevelEntity> configMap = Optional.of( abnormalDetailMapper.fetchAllT() )
                 .get()
                 .stream()
                 .collect( Collectors.toMap( TideLevelEntity::getSensorCode, b -> b ) );
-        //--------------------筛选出潮位实时数据-------------------------
-        Map <Integer, RealVo> map = realList.stream()
-                .filter(
-                        e -> ((e.getSenId() % 100) == ConstantConfig.TS)
-                ).collect( Collectors.toMap( RealVo::getSenId, a -> a ) );
-        //---------------------筛选出潮位历史数据---------
-        Map <String, Real> maps = compare.keySet().stream().filter(
-                e -> (e.split( "," )[1].contains( one.getSenId() % 100 + "" ))
-        ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
-        doProcess( map, tideLevelMap, LocalDateUtil
-                .dateToLocalDateTime( realList.get( 0 ).getTime() ), maps );
+
+        doProcess( realData,previousData, configMap );
+
     }
 
 
     @Override
-    public void doProcess(Map <Integer, RealVo> mapval, Map <Integer, TideLevelEntity> configMap, LocalDateTime time,
-                          final Map <String, Real> finalCompareMap) {
+    public void doProcess(List <RealVo> realData,List<Real> previousData,Map <Integer, TideLevelEntity> configMap) {
         try {
+            //---------------已经入库数据-----------------
+            Map<String, Real> compareMap=new HashMap<>(3000);
+            if (previousData.size() > 0) {
+                compareMap = previousData.stream()
+                        .collect(Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
+                                ,account -> account));
+            }
+            //--------------------筛选出雨量实时数据-------------------------
+            Map<Integer, RealVo> mapval = realData.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.TS))
+                    .collect(Collectors.toMap(RealVo::getSenId, a -> a));
+            //---------------------------------------------------------------------
             final List[] exceptionContainer = {new ArrayList <AbnormalDetailEntity>()};
+            Map<String, Real> finalCompareMap = compareMap;
             configMap.keySet().stream().forEach( e -> {
                 // ------------------------最大值最小值比较------------------------
                 RealVo vo = mapval.get( e );
@@ -100,7 +105,10 @@ public class RealTidelValve implements Valve <RealVo, TideLevelEntity, Real>, Ap
                     }
                     //---------------------------变化率分析-------------------------
                     if (!flag) {
-                        Real real = finalCompareMap.get( vo.getTime().toString() + "," + e );
+                        String before=LocalDateUtil
+                                .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        Real real = finalCompareMap.get( before + "," + e );
                         if (real != null) {
                             BigDecimal frant = BigDecimal.valueOf( real.getRealVal() );
                             BigDecimal end = BigDecimal.valueOf( vo.getFACTV() );
@@ -127,32 +135,50 @@ public class RealTidelValve implements Valve <RealVo, TideLevelEntity, Real>, Ap
                                     flag = true;
                                 }
                             }
+                        }else{
+                            //为了防止初次启动数据无法查询的问题
                         }
                     }
                     //------------------------------过程线分析----------------------
                     if (!flag) {
-                        List <Double> continueData = finalCompareMap.entrySet()
-                                .stream().map( f -> f.getValue().getRealVal() )
-                                .collect( Collectors.toList() );
-                        double[] compare={999};
-                        int[] times={0};
-                        continueData.stream().forEach(k->{
-                            if(k!=compare[0]){
-                                compare[0]=k;
-                            }else{
-                                times[0]++;
+                        String before=LocalDateUtil
+                                .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        Real real = finalCompareMap.get( before + "," + e );
+                        if(real!=null){
+                            int times = config.getDuration() / 5;
+                            try {
+                                List<Real> durList = previousData.subList(0, times);
+                                List<Double> continueData = durList
+                                        .stream().map(f -> f.getRealVal())
+                                        .collect(Collectors.toList());
+                                double[] compare = {999};
+                                int[] time = {0};
+                                continueData.stream().forEach(k -> {
+                                    if (k != compare[0]) {
+                                        compare[0] = k;
+                                        time[0] = 0;
+                                    } else {
+                                        time[0]++;
+                                    }
+                                });
+                                //
+                                if (config.getDuration() / 5 == time[0]+1) {
+                                    exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                            .date(LocalDateUtil
+                                                    .dateToLocalDateTime(vo.getTime())
+                                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                            .sensorCode(vo.getSenId())
+                                            .dataError(DataError.DURING_TIDE.getErrorCode())
+                                            .build());
+                                }
+                            }catch (Exception e1){
+                                logger.error("realTideValve过程线分析异常");
                             }
-                        });
-                        if(config.getDuration() / 5<=times[0]){
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                    .date(LocalDateUtil
-                                            .dateToLocalDateTime(vo.getTime())
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                    .sensorCode(vo.getSenId())
-                                    .dataError(DataError.DURING_TIDE.getErrorCode())
-                                    .build());
+                            flag = true;
+                        }else{
+
                         }
-                        flag=true;
                     }
                     //-----------------------------典型值分析---------------------
                     if (flag) {
@@ -176,8 +202,9 @@ public class RealTidelValve implements Valve <RealVo, TideLevelEntity, Real>, Ap
                     }
                 } else {
                     //---------------------------潮位不存在-------------------------
-                    String date = time
-                            .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) );
+                    String date = LocalDateUtil
+                            .dateToLocalDateTime(realData.get(0).getTime())
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                     exceptionContainer[0].add( new AbnormalDetailEntity.builer()
                             .date( date )
                             .sensorCode( config.getSensorCode() )
@@ -198,19 +225,13 @@ public class RealTidelValve implements Valve <RealVo, TideLevelEntity, Real>, Ap
         return context.getBean( requiredType );
     }
 
-    @Override
-    public void beforeProcess(List <RealVo> val) {
 
-    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
 
-    @Override
-    public void doProcess(Map <Integer, RealVo> mapval, Map <Integer, TideLevelEntity> configMap) {
-    }
 
 
 }

@@ -2,6 +2,7 @@ package com.siti.wisdomhydrologic.analysis.pipeline.valve;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.siti.wisdomhydrologic.analysis.entity.WaterLevelEntity;
 import com.siti.wisdomhydrologic.config.ConstantConfig;
 import com.siti.wisdomhydrologic.analysis.entity.AbnormalDetailEntity;
 import com.siti.wisdomhydrologic.analysis.entity.RainfallEntity;
@@ -19,10 +20,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,7 +30,7 @@ import java.util.stream.IntStream;
  * @data ${DATA}-9:54
  */
 @Component
-public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, ApplicationContextAware {
+public class RealRainfallValve implements Valve<RealVo, Real,RainfallEntity>, ApplicationContextAware {
 
     private static ApplicationContext context = null;
 
@@ -42,28 +40,34 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
 
 
     @Override
-    public void beforeProcess(List<RealVo> realList, Map<String, Real> compare) {
-        RealVo one = realList.get( 0 );
-
+    public void beforeProcess(List <RealVo> realData) {
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
+        //-------------------3小时内的数据-----------------
+        String before=LocalDateUtil
+                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before,ConstantConfig.RS);
         //------------获取雨量配置表--------------
-        Map<Integer, RainfallEntity> rainfallMap = Optional.of(abnormalDetailMapper.fetchAllR()).get().stream()
+        Map<Integer, RainfallEntity> configMap = Optional.of(abnormalDetailMapper.fetchAllR()).get().stream()
                 .collect(Collectors.toMap(RainfallEntity::getSensorCode, a -> a));
-        //--------------------筛选出雨量实时数据-------------------------
-        Map<Integer, RealVo> map = realList.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.RS))
-                .collect(Collectors.toMap(RealVo::getSenId, a -> a));
-        //---------------------筛选出雨量历史数据---------
-        Map <String, Real> maps = compare.keySet().stream().filter(
-                e -> (e.split( "," )[1].contains( one.getSenId() % 100 + "" ))
-        ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
-        doProcess(map, rainfallMap, LocalDateUtil.dateToLocalDateTime(realList.get(0).getTime()), maps);
+        doProcess( realData,previousData, configMap );
     }
 
     @Override
-    public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, RainfallEntity> configMap, LocalDateTime time,
-                          final Map<String, Real> finalCompareMap) {
+    public void doProcess(List <RealVo> realData,List<Real> previousData,Map <Integer, RainfallEntity> configMap) {
         try {
+            //---------------已经存在入库得数据-----------------
+            Map<String, Real> compareMap=new HashMap<>(3000);
+            if (previousData.size() > 0) {
+                compareMap = previousData.stream()
+                        .collect(Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
+                                ,account -> account));
+            }
+            //--------------------筛选出雨量实时数据-------------------------
+            Map<Integer, RealVo> mapval = realData.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.RS))
+                    .collect(Collectors.toMap(RealVo::getSenId, a -> a));
             final List[] exceptionContainer = {new ArrayList <AbnormalDetailEntity>()};
+            Map<String, Real> finalCompareMap = compareMap;
             configMap.keySet().stream().forEach( e -> {
                 RealVo vo = mapval.get( e );
                 boolean flag=false;
@@ -107,7 +111,6 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
                                     double avgRate = (calval[0] / num[0]);
                                     double diff = (realvalue - avgRate) >= 0 ? (realvalue - avgRate) : (avgRate - realvalue);
                                     double calRate = diff / avgRate;
-
                                     if (diff / avgRate > rainfallEntity.getNearbyRate()) {
                                         exceptionContainer[0].add
                                                 ( new AbnormalDetailEntity.builer()
@@ -143,8 +146,9 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
                     }
                 } else {
                     //---------------------------不存在-------------------------
-                    String date = time
-                            .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) );
+                    String date = LocalDateUtil
+                            .dateToLocalDateTime(realData.get(0).getTime())
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                     exceptionContainer[0].add( new AbnormalDetailEntity.builer()
                             .date( date )
                             .sensorCode( rainfallEntity.getSensorCode() )
@@ -164,15 +168,6 @@ public class RealRainfallValve implements Valve<RealVo, RainfallEntity, Real>, A
     public static <T> T getBean(Class<T> requiredType) {
         return context.getBean(requiredType);
     }
-
-    @Override
-    public void beforeProcess(List<RealVo> val) {
-
-    }
-    @Override
-    public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, RainfallEntity> configMap) {
-    }
-
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
