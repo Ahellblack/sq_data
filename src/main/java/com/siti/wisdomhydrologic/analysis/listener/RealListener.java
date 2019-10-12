@@ -58,11 +58,11 @@ public class RealListener {
             logger.error(e.getMessage());
         }finally {
             //----------------------后面可以优化---------------------
-//            try {
-//                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-//            } catch (IOException e1) {
-//                e1.printStackTrace();
-//            }
+            try {
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 
