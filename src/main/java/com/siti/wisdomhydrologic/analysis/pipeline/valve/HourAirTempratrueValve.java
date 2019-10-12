@@ -17,102 +17,99 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
 @Component
-public class HourAirTempratrueValve implements Valve<DayVo, ATEntity, Real>, ApplicationContextAware {
+public class HourAirTempratrueValve implements Valve<DayVo, Real, ATEntity>, ApplicationContextAware {
 
-    private final Logger logger = LoggerFactory.getLogger( this.getClass() );
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static ApplicationContext context = null;
 
     AbnormalDetailMapper abnormalDetailMapper = null;
 
     @Override
-    public void beforeProcess(List<DayVo> realList, Map<String, Real> compare) {
+    public void beforeProcess(List<DayVo> realData) {
         //getRegression
-        DayVo one = realList.get( 0 );
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
-
-        int com = ConstantConfig.WAT;
         //----------------------获取配置表--------------------------------
-        Map<Integer, ATEntity> config = Optional.of(abnormalDetailMapper.fetchAllAT())
+        Map<Integer, ATEntity> configMap = Optional.of(abnormalDetailMapper.fetchAllAT())
                 .get()
                 .stream()
                 .collect(Collectors.toMap(ATEntity::getSensorCode, a -> a));
-        //--------------------筛选出实时数据-----------------------------
-        Map<Integer, DayVo> map = realList.stream()
-                .filter(
-                        e -> (((e.getSenId()) % 100) == com)
-                ).collect(Collectors.toMap(DayVo::getSenId, Function.identity(), (oldData, newData) -> newData));
+        //-------------------3小时内的数据-----------------
+        String before = LocalDateUtil
+                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before, ConstantConfig.WAT);
+        doProcess(realData, previousData, configMap);
 
-        doProcess(map, config, LocalDateUtil
-                .dateToLocalDateTime(realList.get(0).getTime()),compare);
     }
 
     @Override
-    public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, ATEntity> configMap, LocalDateTime time
-            , Map<String, Real> compare) {
+    public void doProcess(List<DayVo> realData, List<Real> previousData, Map<Integer, ATEntity> configMap) {
         try {
+            //---------------查询出得数据-----------------
+            Map<String, Real> compareMap = new HashMap<>(3000);
+            if (previousData.size() > 0) {
+                compareMap = previousData.stream()
+                        .collect(Collectors.toMap((real) -> real.getTime().toString() + "," + real.getSensorCode()
+                                , account -> account));
+            }
+            //--------------------筛选出mq实时数据-------------------------
+            Map<Integer, DayVo> mapval = realData.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.WAT))
+                    .collect(Collectors.toMap(DayVo::getSenId, a -> a));
             //-------------回归模型------------------------
             List<RegressionEntity> rlists = abnormalDetailMapper.getRegression();
-            Map<Integer, RegressionEntity> regmap;
-            RegressionEstimate estimate=  new  RegressionEstimate();
+            Map<Integer, RegressionEntity> regmap = new HashMap<>(0);
+            Map<String, Real> finalCompareMap = compareMap;
+            RegressionEstimate estimate = new RegressionEstimate();
             estimate.initAlgorithm();
             if (rlists.size() > 0) {
                 regmap = rlists.stream()
                         .collect(Collectors.toMap(RegressionEntity::getSectionCode,
                                 Function.identity(), (oldData, newData) -> newData));
 
-            } else {
-                return;
             }
-            //--------------------筛选出小时内相关-------------------------------
-            Map <String, Real> maps = compare.keySet().stream().filter(
-                    e -> (e.split( "," )[1].contains(  ConstantConfig.WAT+ "" ))
-            ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
             //-------------------------------------------------
             if (mapval.size() > 0) {
-                final List[] exceptionContainer = {new ArrayList <AbnormalDetailEntity>()};
-                configMap.keySet().stream().forEach( e -> {
-                    DayVo vo = mapval.get( e );
-                    boolean flag=false;
-                    ATEntity config = configMap.get( e );
+                final List[] exceptionContainer = {new ArrayList<AbnormalDetailEntity>()};
+                Map<Integer, RegressionEntity> finalRegmap = regmap;
+                configMap.keySet().stream().forEach(e -> {
+                    DayVo vo = mapval.get(e);
+                    boolean flag = false;
+                    ATEntity config = configMap.get(e);
                     if (vo != null) {
                         //---------------------最大值，最小值---------------------------------
                         if (vo.getMinV() < config.getLevelMin()) {
-                            exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                    .date( LocalDateUtil
-                                            .dateToLocalDateTime( vo.getTime() )
-                                            .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                    .sensorCode( vo.getSenId() )
-                                    .errorValue( vo.getMinV() )
-                                    .dataError( DataError.HOUR_LESS_AIRTEMPRATURE.getErrorCode() )
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                    .date(LocalDateUtil
+                                            .dateToLocalDateTime(vo.getTime())
+                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                    .sensorCode(vo.getSenId())
+                                    .errorValue(vo.getMinV())
+                                    .dataError(DataError.HOUR_LESS_AIRTEMPRATURE.getErrorCode())
                                     .build());
-                            flag=true;
+                            flag = true;
                         } else if (vo.getMaxV() > config.getLevelMax()) {
-                            exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                    .date( LocalDateUtil
-                                            .dateToLocalDateTime( vo.getTime() )
-                                            .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                    .sensorCode( vo.getSenId() )
-                                    .errorValue( vo.getMaxV() )
-                                    .dataError( DataError.HOUR_MORE_AIRTEMPRATURE.getErrorCode() )
-                                    .build() );
-                            flag=true;
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                    .date(LocalDateUtil
+                                            .dateToLocalDateTime(vo.getTime())
+                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
+                                    .sensorCode(vo.getSenId())
+                                    .errorValue(vo.getMaxV())
+                                    .dataError(DataError.HOUR_MORE_AIRTEMPRATURE.getErrorCode())
+                                    .build());
+                            flag = true;
                         }
                         //---------------------------------回归模型分析--------------------------------
-                        if(!flag&&regmap.size()>0){
-                            RegressionEntity regConfig= regmap.get( e );
-                            if(regConfig!=null) {
-                                estimate.chooseAlgorithm( regConfig.getRefNum() );
-                                AbnormalDetailEntity abnormal = estimate.compute( vo, mapval, regConfig );
+                        if (!flag && finalRegmap.size() > 0) {
+                            RegressionEntity regConfig = finalRegmap.get(e);
+                            if (regConfig != null) {
+                                estimate.chooseAlgorithm(regConfig.getRefNum());
+                                AbnormalDetailEntity abnormal = estimate.compute(vo, mapval, regConfig);
                                 if (abnormal != null) {
                                     exceptionContainer[0].add(abnormal);
                                 }
@@ -120,55 +117,55 @@ public class HourAirTempratrueValve implements Valve<DayVo, ATEntity, Real>, App
                         }
                     } else {
                         //---------------------------小时不存在-------------------------
-                        //雨量无数据
-                        if(maps.size()==0){
+                        if (finalCompareMap.size() == 0) {
                             //其他测站有数据
-                            if(compare.size()>0){
-                                exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                        .date( time.format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                        .sensorCode( config.getSensorCode() )
-                                        .dataError( DataError.CAL_EXCEPTION.getErrorCode() )
-                                        .build() );
-                            }else{
-                                exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                        .date( time.format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                        .sensorCode( config.getSensorCode() )
-                                        .dataError( DataError.WRONG_CONFIG.getErrorCode() )
-                                        .build() );
+                            if (previousData.size() > 0) {
+                                String date = LocalDateUtil
+                                        .dateToLocalDateTime(realData.get(0).getTime())
+                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                                exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                        .date(date)
+                                        .sensorCode(config.getSensorCode())
+                                        .dataError(DataError.CAL_EXCEPTION.getErrorCode())
+                                        .build());
+                            } else {
+                                String date = LocalDateUtil
+                                        .dateToLocalDateTime(realData.get(0).getTime())
+                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                                exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                        .date(date)
+                                        .sensorCode(config.getSensorCode())
+                                        .dataError(DataError.WRONG_CONFIG.getErrorCode())
+                                        .build());
                             }
-                        }else{
-
-                                exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                        .date( time.format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                        .sensorCode( config.getSensorCode() )
-                                        .dataError( DataError.CAL_EXCEPTION.getErrorCode() )
-                                        .build() );
+                        } else {
+                            String date = LocalDateUtil
+                                    .dateToLocalDateTime(realData.get(0).getTime())
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                    .sensorCode(config.getSensorCode())
+                                    .date(date)
+                                    .dataError(DataError.CAL_EXCEPTION.getErrorCode())
+                                    .build());
 
                         }
                     }
-                } );
+                });
                 if (exceptionContainer[0].size() > 0) {
-                    abnormalDetailMapper.insertFinal( exceptionContainer[0] );
+                    abnormalDetailMapper.insertFinal(exceptionContainer[0]);
                     exceptionContainer[0] = null;
                 }
             }
-        }catch (Exception e){
-            logger.error( "HourAirTempratureValve异常：{}", e.getMessage() );
+        } catch (Exception e) {
+            logger.error("HourAirTempratureValve异常：{}", e.getMessage());
 
         }
-    }
-
-    @Override
-    public void doProcess(Map<Integer, DayVo> mapval, Map<Integer, ATEntity> configMap) {
-
     }
 
     public static <T> T getBean(Class<T> requiredType) {
         return context.getBean(requiredType);
     }
-    @Override
-    public void beforeProcess(List<DayVo> val) {
-    }
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;

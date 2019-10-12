@@ -41,7 +41,6 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
     @Override
     public void beforeProcess(List <RealVo> realData) {
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
-
         //-------------------一天内的数据-----------------
         String before=LocalDateUtil
                 .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
@@ -52,9 +51,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                 .get()
                 .stream()
                 .collect(Collectors.toMap(APEntity::getSensorCode, b -> b));
-
         doProcess( realData,previousData, configMap );
-
     }
 
 

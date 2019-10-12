@@ -39,8 +39,6 @@ public class RealListener {
 
     @Resource
     RealMapper realMapper;
-    @Resource
-    AbnormalDetailMapper abnormalDetailMapper;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private AtomicInteger maxBatch = new AtomicInteger(0);
     private AtomicBoolean flag = new AtomicBoolean(false);
