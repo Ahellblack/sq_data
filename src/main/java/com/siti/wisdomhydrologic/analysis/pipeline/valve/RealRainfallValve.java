@@ -74,8 +74,11 @@ public class RealRainfallValve implements Valve<RealVo, Real,RainfallEntity>, Ap
                 RainfallEntity rainfallEntity = configMap.get( e );
                 if (vo != null) {
                     if (finalCompareMap != null) {
-                        if (finalCompareMap.size() > 0 && finalCompareMap.get( e ) != null) {
-                            double realvalue = (vo.getFACTV() - finalCompareMap.get( e ).getRealVal());
+                        String beforefivedate = LocalDateUtil
+                                .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
+                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        if (finalCompareMap.size() > 0 && finalCompareMap.get( beforefivedate+","+e ) != null) {
+                            double realvalue = (vo.getFACTV() - finalCompareMap.get( beforefivedate+","+e).getRealVal());
                             if (realvalue < rainfallEntity.getMinFiveLevel()) {
                                 exceptionContainer[0].add
                                         ( new AbnormalDetailEntity
@@ -95,15 +98,18 @@ public class RealRainfallValve implements Valve<RealVo, Real,RainfallEntity>, Ap
                                         .dataError( DataError.LESS_RainFall.getErrorCode() ).build() );
                                 flag=true;
                             }
-                            if (rainfallEntity.getNearbySensorCode() != null && realvalue != 0 && realvalue != 0.5) {
-                                //附近三个点位
+                            //--------------------附近三个点位-----------------------------------
+                            if (rainfallEntity.getNearbySensorCode() != null && realvalue != 0 ) {
+                                String time = LocalDateUtil
+                                        .dateToLocalDateTime(realData.get(0).getTime())
+                                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                                 String[] sendorcodeArr = rainfallEntity.getNearbySensorCode().split( "," );
                                 final double[] calval = {0};
                                 final double[] num = {0};
                                 IntStream.range( 0, sendorcodeArr.length ).forEach( i -> {
                                     int key = Integer.parseInt( sendorcodeArr[i] );
-                                    if (mapval.containsKey( key ) && finalCompareMap.containsKey( key )) {
-                                        calval[0] = calval[0] + mapval.get( key ).getFACTV() - finalCompareMap.get( key ).getRealVal();
+                                    if (mapval.containsKey( key ) && finalCompareMap.containsKey( time+","+key )) {
+                                        calval[0] = calval[0] + mapval.get( key ).getFACTV() - finalCompareMap.get( time+","+key ).getRealVal();
                                         num[0]++;
                                     }
                                 } );

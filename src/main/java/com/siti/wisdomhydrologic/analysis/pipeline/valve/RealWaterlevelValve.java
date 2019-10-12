@@ -43,12 +43,12 @@ public class RealWaterlevelValve implements Valve <RealVo,Real, WaterLevelEntity
     @Override
     public void beforeProcess(List <RealVo> realData) {
         abnormalDetailMapper = getBean( AbnormalDetailMapper.class );
-        //-------------------一天内的数据-----------------
+        //------------------数据-----------------
                 String before=LocalDateUtil
                         .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
                         .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                 List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before,ConstantConfig.WS);
-        //----------------------获取雨量配置表---------------------------
+        //----------------------获取配置表---------------------------
         Map <Integer, WaterLevelEntity> configMap = Optional.of( abnormalDetailMapper.fetchAllW() )
                 .get()
                 .stream()
@@ -67,7 +67,7 @@ public class RealWaterlevelValve implements Valve <RealVo,Real, WaterLevelEntity
                         .collect(Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
                                 ,account -> account));
             }
-            //--------------------筛选出雨量实时数据-------------------------
+            //--------------------筛选出实时数据-------------------------
             Map<Integer, RealVo> mapval = realData.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.WS))
                     .collect(Collectors.toMap(RealVo::getSenId, a -> a));
             //-------------------------------------------------------------
@@ -144,8 +144,10 @@ public class RealWaterlevelValve implements Valve <RealVo,Real, WaterLevelEntity
                                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
                         Real real = finalCompareMap.get( before + "," + e );
                         if(real!=null) {
+                            //60/5
                             int times = config.getDuration() / 5;
                             try {
+                                //list 10 5 0
                                 List<Real> durList = previousData.subList(0, times);
                                 List<Double> continueData = durList
                                         .stream().map(f -> f.getRealVal())
