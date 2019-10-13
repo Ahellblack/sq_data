@@ -14,7 +14,7 @@ public class Real {
     @Id
     private int sensorCode;//sensor_code
     @Id
-    private Date time;
+    private String time;
 
     private Double realVal;
 
@@ -34,11 +34,11 @@ public class Real {
         this.sensorCode = sensorCode;
     }
 
-    public Date getTime() {
+    public String getTime() {
         return time;
     }
 
-    public void setTime(Date time) {
+    public void setTime(String time) {
         this.time = time;
     }
 

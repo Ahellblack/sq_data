@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,10 +45,12 @@ public class RealListener {
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL)
     @RabbitHandler
-    public void realProcess(List<RealVo> RealVo, Channel channel, Message message) {
+    public void realProcess(List<RealVo> realVos, Channel channel, Message message) {
+        Thread th=Thread.currentThread();
+        System.out.println( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"线程ID:"+th.getId()+realVos.get(0).toString());
         try {
-            if (RealVo.size() > 0) {
-                calPackage(RealVo);
+            if (realVos.size() > 0) {
+                calPackage(realVos);
             } else {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
             }
@@ -80,7 +84,7 @@ public class RealListener {
             finalValvo.setHandler(new RealAirTemperatureValve());
             finalValvo.setHandler(new RealFlowVelocityValve());
             // special
-            finalValvo.setHandler(new RealRainfallValve());
+//            finalValvo.setHandler(new RealRainfallValve());
             //------------------------初始化消费端-----------------------
             new Thread(() -> {
                 multiProcess(finalValvo);

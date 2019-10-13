@@ -122,4 +122,22 @@ public class RealVo {
     public void setCurrentSize(int currentSize) {
         this.currentSize = currentSize;
     }
+
+    @Override
+    public String toString() {
+        return "RealVo{" +
+                "senId=" + senId +
+                ", Time=" + Time +
+                ", FACTV=" + FACTV +
+                ", IFCH=" + IFCH +
+                ", CYCLE=" + CYCLE +
+                ", STATE=" + STATE +
+                ", TS=" + TS +
+                ", maxBatch=" + maxBatch +
+                ", currentBatch=" + currentBatch +
+                ", status=" + status +
+                ", sumSize=" + sumSize +
+                ", currentSize=" + currentSize +
+                '}';
+    }
 }

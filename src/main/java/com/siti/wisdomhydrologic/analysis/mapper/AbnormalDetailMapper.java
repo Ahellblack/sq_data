@@ -112,6 +112,7 @@ public interface AbnormalDetailMapper extends Mapper<AbnormalDetailEntity> {
     @Select("<script>SELECT sensor_code,time,real_val FROM `real` where  time &gt; #{beforeTime} and time &lt; #{endTime}</script>")
     List<Real> selectHourPeriod(@Param("beforeTime") String time,@Param("endTime") String end);
 
+
     @Insert("<script>" +
             "insert into abnormal_detail(date,sensor_code,five_below,five_above,more_near,less_near,error_value)\n" +
             "values <foreach collection=\"list\" index=\"index\" item=\"AbnormalDetailEntity\" separator=\",\">" +
