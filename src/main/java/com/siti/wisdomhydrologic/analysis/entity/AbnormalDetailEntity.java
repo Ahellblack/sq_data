@@ -15,19 +15,17 @@ public class AbnormalDetailEntity {
     int id;
     String date;
     int sensorCode;
-    String errorPeriod;
     double errorValue;
     String dataError;
-    String equipmentError;
+    String description;
     Date createTime;
 
     private AbnormalDetailEntity(builer builer){
         this. date=builer.date;
         this. sensorCode=builer.sensorCode;
-        this. errorPeriod=builer.errorPeriod;
         this. errorValue=builer.errorValue;
         this. dataError=builer.dataError;
-        this. equipmentError=builer.equipmentError;
+        this. description=builer.description;
         this. createTime=builer.createTime;
         //java 构建器
     }
@@ -37,24 +35,14 @@ public class AbnormalDetailEntity {
         int sensorCode;
         double errorValue;
         String dataError;
-        String equipmentError;
+        String description;
         Date createTime;
-       String errorPeriod;
         public AbnormalDetailEntity build(){
             return new AbnormalDetailEntity(this);
         }
 
         public builer date(String date) {
             this.date = date;
-            return this;
-        }
-
-        public builer errorPeriod(String errorPeriod) {
-            this.errorPeriod = errorPeriod;
-            return this;
-        }
-        public builer sensorCode(int sensorCode) {
-            this.sensorCode = sensorCode;
             return this;
         }
 
@@ -68,13 +56,18 @@ public class AbnormalDetailEntity {
             return this;
         }
 
-        public builer equipmentError(String equipmentError) {
-            this.equipmentError = equipmentError;
+        public builer description(String description) {
+            this.description = description;
             return this;
         }
 
         public builer createTime(Date createTime) {
             this.createTime = createTime;
+            return this;
+        }
+
+        public builer sensorCode(Integer sensorCode) {
+            this.sensorCode = sensorCode;
             return this;
         }
     }
@@ -87,13 +80,6 @@ public class AbnormalDetailEntity {
         this.dataError = dataError;
     }
 
-    public String getEquipmentError() {
-        return equipmentError;
-    }
-
-    public void setEquipmentError(String equipmentError) {
-        this.equipmentError = equipmentError;
-    }
 
     public double getErrorValue() {
         return errorValue;
@@ -127,12 +113,12 @@ public class AbnormalDetailEntity {
         this.createTime = createTime;
     }
 
-    public String getErrorPeriod() {
-        return errorPeriod;
+    public String getDescription() {
+        return description;
     }
 
-    public void setErrorPeriod(String errorPeriod) {
-        this.errorPeriod = errorPeriod;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public int getId() {

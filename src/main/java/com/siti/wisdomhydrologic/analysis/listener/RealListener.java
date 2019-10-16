@@ -5,10 +5,8 @@ import com.siti.wisdomhydrologic.analysis.pipeline.PipelineValve;
 import com.siti.wisdomhydrologic.analysis.pipeline.valve.*;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
 import com.siti.wisdomhydrologic.config.RabbitMQConfig;
-import com.siti.wisdomhydrologic.analysis.entity.Real;
 import com.siti.wisdomhydrologic.analysis.mapper.*;
 import com.siti.wisdomhydrologic.analysis.vo.RealVo;
-import com.siti.wisdomhydrologic.util.LocalDateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -84,7 +82,7 @@ public class RealListener {
             finalValvo.setHandler(new RealAirTemperatureValve());
             finalValvo.setHandler(new RealFlowVelocityValve());
             // special
-//            finalValvo.setHandler(new RealRainfallValve());
+            finalValvo.setHandler(new RealRainfallValve());
             //------------------------初始化消费端-----------------------
             new Thread(() -> {
                 multiProcess(finalValvo);

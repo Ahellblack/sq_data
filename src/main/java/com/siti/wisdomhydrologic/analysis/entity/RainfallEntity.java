@@ -12,42 +12,54 @@ import java.util.Date;
 @Table(name = "abnormal_rainfall")
 public class RainfallEntity {
     @Id
-    int id;
-    int sensorCode;//模块
+    Integer id;
+    Integer sensorCode;//模块
     String sensorName;//站点名称
-    int interruptLimit;//中断次数
-    double maxDayLevel;//一天最高雨量
-    double minDayLevel;//一天最低雨量
-    double maxHourLevel;//小时最高雨量
-    double minHourLevel;//小时最低雨量
-    double maxFiveLevel;//5分钟最高雨量
-    double minFiveLevel;//5分钟最低雨量
+    Integer interruptLimit;//中断次数
+    Double maxDayLevel;//一天最高雨量
+    Double minDayLevel;//一天最低雨量
+    Double maxHourLevel;//小时最高雨量
+    Double minHourLevel;//小时最低雨量
+    Double maxFiveLevel;//5分钟最高雨量
+    Double minFiveLevel;//5分钟最低雨量
     String nearbySensorCode;//附近3个传感器nearby_sensor_code
-    double nearbyRate;//高于附近平均值的比例
+    Double nearbyRate;//高于附近平均值的比例
     Date createTime;
     String exceptionValue;
 
-    public String getExceptionValue() {
-        return exceptionValue;
+    @Override
+    public String toString() {
+        return "RainfallEntity{" +
+                "id=" + id +
+                ", sensorCode=" + sensorCode +
+                ", sensorName='" + sensorName + '\'' +
+                ", interruptLimit=" + interruptLimit +
+                ", maxDayLevel=" + maxDayLevel +
+                ", minDayLevel=" + minDayLevel +
+                ", maxHourLevel=" + maxHourLevel +
+                ", minHourLevel=" + minHourLevel +
+                ", maxFiveLevel=" + maxFiveLevel +
+                ", minFiveLevel=" + minFiveLevel +
+                ", nearbySensorCode='" + nearbySensorCode + '\'' +
+                ", nearbyRate=" + nearbyRate +
+                ", createTime=" + createTime +
+                ", exceptionValue='" + exceptionValue + '\'' +
+                '}';
     }
 
-    public void setExceptionValue(String exceptionValue) {
-        this.exceptionValue = exceptionValue;
-    }
-
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public int getSensorCode() {
+    public Integer getSensorCode() {
         return sensorCode;
     }
 
-    public void setSensorCode(int sensorCode) {
+    public void setSensorCode(Integer sensorCode) {
         this.sensorCode = sensorCode;
     }
 
@@ -59,59 +71,59 @@ public class RainfallEntity {
         this.sensorName = sensorName;
     }
 
-    public int getInterruptLimit() {
+    public Integer getInterruptLimit() {
         return interruptLimit;
     }
 
-    public void setInterruptLimit(int interruptLimit) {
+    public void setInterruptLimit(Integer interruptLimit) {
         this.interruptLimit = interruptLimit;
     }
 
-    public double getMaxDayLevel() {
+    public Double getMaxDayLevel() {
         return maxDayLevel;
     }
 
-    public void setMaxDayLevel(double maxDayLevel) {
+    public void setMaxDayLevel(Double maxDayLevel) {
         this.maxDayLevel = maxDayLevel;
     }
 
-    public double getMinDayLevel() {
+    public Double getMinDayLevel() {
         return minDayLevel;
     }
 
-    public void setMinDayLevel(double minDayLevel) {
+    public void setMinDayLevel(Double minDayLevel) {
         this.minDayLevel = minDayLevel;
     }
 
-    public double getMaxHourLevel() {
+    public Double getMaxHourLevel() {
         return maxHourLevel;
     }
 
-    public void setMaxHourLevel(double maxHourLevel) {
+    public void setMaxHourLevel(Double maxHourLevel) {
         this.maxHourLevel = maxHourLevel;
     }
 
-    public double getMinHourLevel() {
+    public Double getMinHourLevel() {
         return minHourLevel;
     }
 
-    public void setMinHourLevel(double minHourLevel) {
+    public void setMinHourLevel(Double minHourLevel) {
         this.minHourLevel = minHourLevel;
     }
 
-    public double getMaxFiveLevel() {
+    public Double getMaxFiveLevel() {
         return maxFiveLevel;
     }
 
-    public void setMaxFiveLevel(double maxFiveLevel) {
+    public void setMaxFiveLevel(Double maxFiveLevel) {
         this.maxFiveLevel = maxFiveLevel;
     }
 
-    public double getMinFiveLevel() {
+    public Double getMinFiveLevel() {
         return minFiveLevel;
     }
 
-    public void setMinFiveLevel(double minFiveLevel) {
+    public void setMinFiveLevel(Double minFiveLevel) {
         this.minFiveLevel = minFiveLevel;
     }
 
@@ -123,11 +135,11 @@ public class RainfallEntity {
         this.nearbySensorCode = nearbySensorCode;
     }
 
-    public double getNearbyRate() {
+    public Double getNearbyRate() {
         return nearbyRate;
     }
 
-    public void setNearbyRate(double nearbyRate) {
+    public void setNearbyRate(Double nearbyRate) {
         this.nearbyRate = nearbyRate;
     }
 
@@ -137,5 +149,13 @@ public class RainfallEntity {
 
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
+    }
+
+    public String getExceptionValue() {
+        return exceptionValue;
+    }
+
+    public void setExceptionValue(String exceptionValue) {
+        this.exceptionValue = exceptionValue;
     }
 }

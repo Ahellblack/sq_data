@@ -32,10 +32,10 @@ public interface AbnormalDetailMapper extends Mapper<AbnormalDetailEntity> {
     String getSensorModelType(@Param("sensor_code") String sensor_code);
 
     @Insert("<script>" +
-            "insert ignore into abnormal_detail(date,sensor_code,data_error,error_period,error_value,equipment_error)\n" +
+            "insert ignore into abnormal_detail(date,sensor_code,data_error,error_value,description)\n" +
             "values <foreach collection=\"list\" index=\"index\" item=\"AbnormalDetailEntity\" separator=\",\">" +
-            "( #{AbnormalDetailEntity.date},#{AbnormalDetailEntity.sensorCode},#{AbnormalDetailEntity.dataError},#{AbnormalDetailEntity.errorPeriod}" +
-            ",#{AbnormalDetailEntity.errorValue},#{AbnormalDetailEntity.equipmentError})" +
+            "( #{AbnormalDetailEntity.date},#{AbnormalDetailEntity.sensorCode},#{AbnormalDetailEntity.dataError}" +
+            ",#{AbnormalDetailEntity.errorValue},#{AbnormalDetailEntity.description})" +
             "</foreach></script>\n")
     int insertFinal(@Param("list") List<AbnormalDetailEntity> list);
 
@@ -85,8 +85,6 @@ public interface AbnormalDetailMapper extends Mapper<AbnormalDetailEntity> {
 
     @Select("select * from abnormal_electric")
     List<ELEEntity> fetchAllELE();
-
-
 
     @Select("<script>select * from config_regression_function</script>\n")
     List<RegressionEntity> getRegression();

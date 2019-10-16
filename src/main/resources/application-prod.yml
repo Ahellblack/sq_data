@@ -15,13 +15,21 @@ spring:
      publisher-returns: true
      virtual-host: siti
      listener:
-        simple:
-          acknowledge-mode: manual #采用手动应答
-          concurrency: 1
-          max-concurrency: 1
-          retry:
-            enabled: false #是否支持重试
-          prefetch: 10
+       simple:
+         acknowledge-mode: manual #采用手动应答
+         concurrency: 2
+         max-concurrency: 2
+         retry:
+           enabled: true #是否支持重试
+         prefetch: 1
+#        simple:
+#          acknowledge-mode: manual #采用手动应答
+#          concurrency: 1
+#          max-concurrency: 1
+#          retry:
+#            enabled: false #是否支持重试
+#          prefetch: 10
+
 
 logback:
   logHome: /sq_data/log/

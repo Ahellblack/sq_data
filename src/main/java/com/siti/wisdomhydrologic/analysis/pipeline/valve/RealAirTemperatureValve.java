@@ -95,7 +95,7 @@ public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,App
                 Integer sensorCode = entry.getKey();  // 记录传感器元素编号
                 String dataErrorCode = null;  // 记录异常错误编号
                 Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
-                String descStr = "RTSQ分析：时间："+date+",元素："+sensorCode+"，数值："+realvalue;
+                String descStr = "RTSQ："+date+","+sensorCode+","+realvalue;
 
 
                 //---------------------------中断分析-------------------------
@@ -112,23 +112,30 @@ public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,App
                 //-----------------------------典型值分析---------------------
                 if (!flag) { //
                     String JsonConfig = config.getExceptionValue();
-                    if (!JsonConfig.equals( "" ) && JsonConfig != null) {
-                        Iterator<Object> jsonIterator = JSONArray.parseArray( JsonConfig ).iterator();
-                        while(jsonIterator.hasNext()){
-                            JSONObject one = (JSONObject) jsonIterator.next();
-                            if (Double.parseDouble( one.get( "error_value" ).toString() ) == realvalue) {
-                                dataErrorCode = one.get( "error_code" ).toString();
-                                flag = true;
-                                descStr += "==>典型值分析:异常类型："+dataErrorCode+"典型值配置："+ one.get( "error_value" );
-                                break;
+                    if (null != JsonConfig && !"".equals(JsonConfig)) {
+                        Iterator<Object> jsonIterator = null;
+
+                        try {
+                            jsonIterator = JSONArray.parseArray(JsonConfig).iterator();
+
+                            while (jsonIterator.hasNext()) {
+                                JSONObject one = (JSONObject) jsonIterator.next();
+                                if (Double.parseDouble(one.get("error_value").toString()) == realvalue) {
+                                    dataErrorCode = one.get("error_code").toString();
+                                    flag = true;
+                                    descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
+                                    break;
+                                }
                             }
+                            if (flag == false) {
+                                descStr += "==>典型值分析:通过!";
+                            }
+
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
 
-                        if(flag == false){
-                            descStr += "==>典型值分析:通过!";
-                        }
-                    }
-                    else{
+                    } else {
                         // 典型值配置没有
                         descStr += "==>典型值分析:典型值无配置,典型值分析跳过!";
                     }
@@ -206,11 +213,12 @@ public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,App
                                 })
                                 .collect(Collectors.toList());
 
-                        if((float) realList.size() / (config.getDuration() / 5) < 0.8){
+                        Integer needCount = config.getDuration() / 5;
+                        if(((float) realList.size() / needCount) < 0.8){
                             descStr +="==>过程线分析:缺少依赖数据，跳过过程线分析！";
                         }
                         else{
-                            List<Real> compareList = realList.subList(0, config.getDuration() / 5);
+                            List<Real> compareList = realList.subList(0,  realList.size() < needCount ? realList.size(): needCount);
                             Map<String, Double> map = compareList.stream().collect(Collectors.toMap(Real::getTime,Real::getRealVal));
 
                             boolean allEqualsFlag = true;  // 全部数据相等标志
@@ -324,7 +332,7 @@ public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,App
                         }
 
                         if (flag){
-                            dataErrorCode = DataError.REGRESSION_EXCEPTION.getErrorCode();
+                            dataErrorCode = DataError.REGRESSION_EXCEPTION_AIRTEMPRATURE.getErrorCode();
                         }
                     }
                 }  // 回归模型分析结束
@@ -336,6 +344,7 @@ public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,App
                             .sensorCode( sensorCode )
                             .errorValue( realvalue )
                             .dataError(dataErrorCode)
+                            .description(descStr)
                             .build() );
                 }
             }            if (exceptionContainer[0].size() > 0) {
