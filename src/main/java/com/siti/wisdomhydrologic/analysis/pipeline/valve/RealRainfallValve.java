@@ -81,273 +81,193 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
             while (iterator.hasNext()) {
                 Map.Entry<Integer, RainfallEntity> entry = iterator.next();
 
-                RealVo vo = mapval.get(entry.getKey());  // 元素数据
-                RainfallEntity config = entry.getValue();  // 元素配置
+                try {
+                    RealVo vo = mapval.get(entry.getKey());  // 元素数据
+                    RainfallEntity config = entry.getValue();  // 元素配置
 
-                Boolean flag = false;
-                Integer sensorCode = entry.getKey();  // 记录传感器元素编号
-                String dataErrorCode = null;  // 记录异常错误编号
-                Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
-                String descStr = "RTSQ：" + date + "," + sensorCode + "," + realvalue;
+                    Boolean flag = false;
+                    Integer sensorCode = entry.getKey();  // 记录传感器元素编号
+                    String dataErrorCode = null;  // 记录异常错误编号
+                    Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
+                    String descStr = "RTSQ：" + date + "," + sensorCode + "," + realvalue;
 
 
-                // 雨量元素的数值为本次减前一次，需要过去前一次的值
-                String before = LocalDateUtil
-                        .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
-                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                Real lastReal = compareMap.get(before + "," + sensorCode);
+                    // 雨量元素的数值为本次减前一次，需要过去前一次的值
+                    String before = LocalDateUtil
+                            .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
+                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                    Real lastReal = compareMap.get(before + "," + sensorCode);
 
-                //---------------------------中断分析-------------------------
-                if (!flag) {
-                    if (vo == null) {  // MQ数据包数据不存在
-                        dataErrorCode = DataError.BREAK_RainFall.getErrorCode();
-                        flag = true;
-                        descStr += "==>中断分析:数据发生中断！";
-                    } else {
-                        descStr += "==>中断分析:通过！";
-                    }
-                }
-
-                if (!flag) { // 判断前一次雨量数据是否存在
-                    if (lastReal == null) {
-                        descStr += "时间为" + before + "," + sensorCode + "的数据缺失，跳过后续分析！";
-                        flag = true;
-                        dataErrorCode = null;
-                    } else {
-                        realvalue = vo.getFACTV() - lastReal.getRealVal();
-                        descStr += "实际值" + lastReal.getRealVal() + "-" + vo.getFACTV() + "=" + realvalue;
-                    }
-                }
-
-                //-----------------------------典型值分析---------------------
-                if (!flag) { //
-                    String JsonConfig = config.getExceptionValue();
-                    if (null != JsonConfig && !"".equals(JsonConfig)) {
-                        Iterator<Object> jsonIterator = null;
-
-                        try {
-                            jsonIterator = JSONArray.parseArray(JsonConfig).iterator();
-
-                            while (jsonIterator.hasNext()) {
-                                JSONObject one = (JSONObject) jsonIterator.next();
-                                if (Double.parseDouble(one.get("error_value").toString()) == vo.getFACTV()) {
-                                    dataErrorCode = one.get("error_code").toString();
-                                    flag = true;
-                                    descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
-                                    break;
-                                }
-                            }
-                            if (flag == false) {
-                                descStr += "==>典型值分析:通过!";
-                            }
-
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
-                    } else {
-                        // 典型值配置没有
-                        descStr += "==>典型值分析:典型值无配置,典型值分析跳过!";
-                    }
-                }
-
-                //---------------------------极值分析-------------------------
-                if (!flag) {
-                    if (lastReal == null) {
-                        descStr += "==>雨量" + before + "," + sensorCode + "的数据找不到，跳过分析！";
-                    } else {
-                        Double rainFallValue = vo.getFACTV() - lastReal.getRealVal();
-                        if (rainFallValue < config.getMinFiveLevel()) {
-                            dataErrorCode = DataError.LESS_RainFall.getErrorCode();
+                    //---------------------------中断分析-------------------------
+                    if (!flag) {
+                        if (vo == null) {  // MQ数据包数据不存在
+                            dataErrorCode = DataError.BREAK_RainFall.getErrorCode();
                             flag = true;
-                            descStr += "==>极值分析:小于最小值:" + config.getMinFiveLevel() + " !<" + rainFallValue + " <" + config.getMaxFiveLevel();
-                        } else if (rainFallValue > config.getMaxFiveLevel()) {
-                            dataErrorCode = DataError.MORE_RainFall.getErrorCode();
-                            flag = true;
-                            descStr += "==>极值分析得到:超过最大值:" + config.getMinFiveLevel() + " <" + rainFallValue + " !<" + config.getMaxFiveLevel();
+                            descStr += "==>中断分析:数据发生中断！";
                         } else {
-                            descStr += "==>极值分析得到:通过！";
+                            descStr += "==>中断分析:通过！";
                         }
                     }
-                }
 
-                //--------------------邻近测站分析-----------------------------------
-                if (!flag) {
-                    String nearBySensorCode = config.getNearbySensorCode();
-                    Double nearByRate = config.getNearbyRate();
-                    if (!"".equals(nearBySensorCode) || null != nearByRate) {
-                        String lastTime = LocalDateUtil
-                                .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
-                                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                        List<String> sendorcodeArr = Arrays.asList(nearBySensorCode.split(","));
-                        Double validSumValue = new Double(0);
-                        int validNum = 0;
+                    if (!flag) { // 判断前一次雨量数据是否存在
+                        if (lastReal == null) {
+                            descStr += "时间为" + before + "," + sensorCode + "的数据缺失，跳过后续分析！";
+                            flag = true;
+                            dataErrorCode = null;
+                        } else {
+                            realvalue = vo.getFACTV() - lastReal.getRealVal();
+                            descStr += "实际值" + lastReal.getRealVal() + "-" + vo.getFACTV() + "=" + realvalue;
+                        }
+                    }
 
-                        for (String code : sendorcodeArr) {
-                            if (null == mapval.get(Integer.parseInt(code))) {
-                                descStr += "," + code + "," + date + "数据不齐全";
-                            } else if (null == compareMap.get(lastTime + "," + code)) {
-                                descStr += "," + code + "," + lastTime + "数据不齐全";
+                    //-----------------------------典型值分析---------------------
+                    if (!flag) { //
+                        String JsonConfig = config.getExceptionValue();
+                        if (null != JsonConfig && !"".equals(JsonConfig)) {
+                            Iterator<Object> jsonIterator = null;
+
+                            try {
+                                jsonIterator = JSONArray.parseArray(JsonConfig).iterator();
+
+                                while (jsonIterator.hasNext()) {
+                                    JSONObject one = (JSONObject) jsonIterator.next();
+                                    if (Double.parseDouble(one.get("error_value").toString()) == vo.getFACTV()) {
+                                        dataErrorCode = one.get("error_code").toString();
+                                        flag = true;
+                                        descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
+                                        break;
+                                    }
+                                }
+                                if (flag == false) {
+                                    descStr += "==>典型值分析:通过!";
+                                }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        } else {
+                            // 典型值配置没有
+                            descStr += "==>典型值分析:典型值无配置,典型值分析跳过!";
+                        }
+                    }
+
+                    //---------------------------极值分析-------------------------
+                    if (!flag) {
+                        if (lastReal == null) {
+                            descStr += "==>雨量" + before + "," + sensorCode + "的数据找不到，跳过分析！";
+                        } else {
+                            Double rainFallValue = vo.getFACTV() - lastReal.getRealVal();
+                            if (rainFallValue < config.getMinFiveLevel()) {
+                                dataErrorCode = DataError.LESS_RainFall.getErrorCode();
+                                flag = true;
+                                descStr += "==>极值分析:小于最小值:" + config.getMinFiveLevel() + " !<" + rainFallValue + " <" + config.getMaxFiveLevel();
+                            } else if (rainFallValue > config.getMaxFiveLevel()) {
+                                dataErrorCode = DataError.MORE_RainFall.getErrorCode();
+                                flag = true;
+                                descStr += "==>极值分析得到:超过最大值:" + config.getMinFiveLevel() + " <" + rainFallValue + " !<" + config.getMaxFiveLevel();
                             } else {
-                                Double end = mapval.get(Integer.parseInt(code)).getFACTV();
-                                Double front = compareMap.get(lastTime + "," + code).getRealVal();
-                                validSumValue = validSumValue + end - front;
-                                validNum++;
-                                descStr += "," + code + "->" + end + "-" + front + "=" + (end - front);
+                                descStr += "==>极值分析得到:通过！";
                             }
                         }
+                    }
 
-                        // 判断依赖数据是否大部分存在
-                        if ((float) (validNum / sendorcodeArr.size()) >= 0.5) {
-                            double avgValue = (validSumValue / validNum);
+                    //--------------------邻近测站分析-----------------------------------
+                    if (!flag) {
+                        String nearBySensorCode = config.getNearbySensorCode();
+                        Double nearByRate = config.getNearbyRate();
+                        if (!"".equals(nearBySensorCode) || null != nearByRate) {
+                            String lastTime = LocalDateUtil
+                                    .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            List<String> sendorcodeArr = Arrays.asList(nearBySensorCode.split(","));
+                            Double validSumValue = new Double(0);
+                            int validNum = 0;
+                            List<Double> refValue= new ArrayList<Double>();
 
-                            if (avgValue == 0 && realvalue == 0) {
-                                descStr += "==>邻近测站分析:通过！";
-                            } else if (avgValue != 0 && realvalue == 0) {
-                                flag = true;
-                                dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
-                                descStr += "==>邻近测站分析:异常！本身无雨，周围有雨！";
-                            } else if (avgValue == 0 && realvalue != 0) {
-                                flag = true;
-                                dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
-                                descStr += "==>邻近测站分析:异常！本身有雨，周围无雨！";
-                            } else {  // 本身和周围均值均不为0
-                                double diff = realvalue - avgValue;
-                                if (diff == 0) {
-                                    descStr += "==>邻近测站分析:分析通过！";
-                                } else if (diff < 0) {
-                                    if (Math.abs(diff) / avgValue > config.getNearbyRate()) {
-                                        flag = true;
-                                        dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
-                                        descStr += "==>邻近测站分析:低于周围均值" + config.getNearbyRate() + "！";
-                                    } else {
-                                        descStr += "==>邻近测站分析:分析通过！";
-                                    }
-                                } else { // diff > 0
-                                    if (diff / avgValue > config.getNearbyRate()) {
-                                        flag = true;
-                                        dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
-                                        descStr += "==>邻近测站分析:高于周围均值" + config.getNearbyRate() + "！";
-                                    } else {
-                                        descStr += "==>邻近测站分析:分析通过！";
-                                    }
+                            for(int i = 0; i< 3; i++){
+                                String code = sendorcodeArr.get(i);
+                                if (null == mapval.get(Integer.parseInt(code))) {
+                                    descStr += "," + code + "," + date + "数据不齐全";
+                                } else if (null == compareMap.get(lastTime + "," + code)) {
+                                    descStr += "," + code + "," + lastTime + "数据不齐全";
+                                } else {
+                                    Double end = mapval.get(Integer.parseInt(code)).getFACTV();
+                                    Double front = compareMap.get(lastTime + "," + code).getRealVal();
+                                    validNum++;
+                                    validSumValue+=end-front;
+                                    refValue.add(end - front);
+                                    descStr += "," + code + "->" + end + "-" + front + "=" + (end - front);
                                 }
                             }
+
+                            // 判断依赖数据是否大部分存在
+                            if (refValue.size() >= 2) {
+                                boolean allMoreThanZeroFlag = refValue.stream().allMatch(element -> element >0);
+                                boolean allEqualZeroFlag = refValue.stream().allMatch(element -> element == 0);
+
+                                if (allEqualZeroFlag && realvalue == 0){
+                                    descStr += "==>邻近测站分析:通过！";
+                                }
+                                else if (allMoreThanZeroFlag && realvalue == 0){
+                                    // 周围元素数值均大于0, 自身为0
+                                    flag = true;
+                                    dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
+                                    descStr += "==>邻近测站分析:异常！本身无雨，周围有雨！";
+                                }
+                                else if (allEqualZeroFlag && realvalue > 0){
+                                    // 周围元素数值均为0, 自身不为0
+                                    flag = true;
+                                    dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
+                                    descStr += "==>邻近测站分析:异常！本身有雨，周围无雨！";
+                                }
+                                else{
+                                    // 周围和本身都不为0
+                                    double avgValue = validSumValue / validNum;
+                                    double diff = realvalue - avgValue;
+
+                                    if (diff == 0) {
+                                        descStr += "==>邻近测站分析:分析通过！";
+                                    } else if (diff < 0) {
+                                        if (Math.abs(diff) / avgValue > config.getNearbyRate()) {
+                                            flag = true;
+                                            dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
+                                            descStr += "==>邻近测站分析:低于周围均值" + config.getNearbyRate() + "！";
+                                        } else {
+                                            descStr += "==>邻近测站分析:分析通过！";
+                                        }
+                                    } else { // diff > 0
+                                        if (diff / avgValue > config.getNearbyRate()) {
+                                            flag = true;
+                                            dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
+                                            descStr += "==>邻近测站分析:高于周围均值" + config.getNearbyRate() + "！";
+                                        } else {
+                                            descStr += "==>邻近测站分析:分析通过！";
+                                        }
+                                    }
+                                }
+
+                            } else {
+                                descStr += "==>邻近测站分析:缺失依赖过多,跳过分析!";
+                            }
                         } else {
-                            descStr += "==>邻近测站分析:" + validNum + "/" + sendorcodeArr.size() + "缺失依赖过多,跳过分析!";
+                            descStr += "==>邻近测站分析:邻近测站无配置,分析跳过!";
                         }
-                    } else {
-                        descStr += "==>邻近测站分析:邻近测站无配置,分析跳过!";
                     }
-                }
-//                // 雨量暂时不分析回归模型
-//                //---------------------------回归模型分析-------------------------
-//                if(!flag){
-//                    List<RegressionEntity> regressionFunc = rlists.stream()
-//                            .filter(object -> object.getSectionCode().equals(sensorCode))
-//                            .collect(Collectors.toList());
-//
-//                    if (regressionFunc.size() <= 0) {  // 回归模型不存在
-//                        descStr +="==>回归模型分析:回归模型不存在，跳过分析！";
-//                    }
-//                    else{
-//                        RegressionEntity regressionEntity= regressionFunc.get(0);
-//                        Double arg0 = regressionEntity.getArg0();
-//                        Double arg1 = regressionEntity.getArg1();
-//                        Double redisualMax = regressionEntity.getAbResidualMax();
-//                        Integer sensorCode1 = regressionEntity.getRef1SectionCode();
-//                        Double value1 = compareMap.get( date + "," + sensorCode1 ).getRealVal();
-//
-//                        if (regressionEntity.getRefNum() == 1){
-//                            if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ){
-//                                descStr +="==>回归模型分析:回归模型参数不全，跳过分析！"+regressionEntity.toString();
-//                            }
-//                            else {
-//                                Double predictValue = value1 * arg1 + arg0;
-//                                if (Math.abs(predictValue - realvalue)  > redisualMax){
-//                                    flag = true;
-//                                    descStr +="==>回归模型分析:残差过大，回归模型异常！"+
-//                                            "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
-//                                            redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
-//                                }
-//                                else{
-//                                    descStr +=";回归模型分析得到==>残差正常，回归模型正常！"+
-//                                            "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
-//                                            redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
-//                                }
-//                            }
-//                        }
-//                        else if (regressionEntity.getRefNum() == 2){
-//                            Double arg2 = regressionEntity.getArg2();
-//                            Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-//                            Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
-//
-//                            if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
-//                                    null == arg2 || null == value2 ){
-//                                descStr +=";回归模型分析得到==>回归模型参数不全，跳过分析！"+regressionEntity.toString();
-//                            }
-//                            else {
-//                                Double predictValue = value1 * arg1 + value2 * arg2 + arg0;
-//                                if (Math.abs(predictValue - realvalue) > redisualMax){
-//                                    flag = true;
-//                                    descStr +="==>回归模型分析:残差过大，回归模型异常！"+
-//                                            "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-//                                            redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
-//                                }
-//                                else{
-//                                    descStr +="==>回归模型分析:残差正常，回归模型正常！"+
-//                                            "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-//                                            redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
-//                                }
-//                            }
-//                        }
-//                        else if (regressionEntity.getRefNum() == 3){
-//                            Double arg2 = regressionEntity.getArg2();
-//                            Double arg3 = regressionEntity.getArg3();
-//                            Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-//                            Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
-//                            Integer sensorCode3 = regressionEntity.getRef3SectionCode();
-//                            Double value3 = compareMap.get( date + "," + sensorCode3 ).getRealVal();
-//
-//                            if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
-//                                    null == arg2 || null == value2 || null == arg3 || null == value3){
-//                                descStr +="==>回归模型分析:回归模型参数不全，跳过分析！"+regressionEntity.toString();
-//                            }
-//                            else {
-//                                Double predictValue = arg0 + value1 * arg1 + value2 * arg2 + value3 * arg3;
-//                                if (Math.abs(predictValue - realvalue) > redisualMax){
-//                                    flag = true;
-//                                    descStr +="==>回归模型分析:残差过大，回归模型异常！"+
-//                                            "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-//                                            redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
-//                                }
-//                                else{
-//                                    descStr +="==>回归模型分析:残差正常，回归模型正常！"+
-//                                            "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-//                                            redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
-//                                }
-//                            }
-//                        }else{
-//                            descStr +="==>回归模型分析:回归模型参数不全，跳过分析！";
-//                        }
-//
-//                        if (flag){
-//                            dataErrorCode = DataError.REGRESSION_EXCEPTION_WATERLEVEL.getErrorCode();
-//                        }
-//                    }
-//                }  // 回归模型分析结束
 
-
-                System.out.println(descStr);
-                if (flag && null != dataErrorCode) {  // 出现异常才往异常表添加数据
-                    exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                            .date(date)
-                            .sensorCode(sensorCode)
-                            .errorValue(realvalue)
-                            .dataError(dataErrorCode)
-                            .description(descStr)
-                            .description(descStr)
-                            .build());
+                    logger.info(descStr);
+                    if (flag && null != dataErrorCode) {  // 出现异常才往异常表添加数据
+                        exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                                .date(date)
+                                .sensorCode(sensorCode)
+                                .errorValue(realvalue)
+                                .dataError(dataErrorCode)
+                                .description(descStr)
+                                .description(descStr)
+                                .build());
+                    }
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
                 }
             }
 
