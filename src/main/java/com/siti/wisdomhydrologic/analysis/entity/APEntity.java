@@ -11,38 +11,46 @@ import javax.persistence.Table;
 @Table(name = "abnormal_air_pressure")
 public class APEntity {
     @Id
-    int id;
-    int sensorCode;//模块
+    Integer id;
+    Integer sensorCode;//模块
     String sensorName;//'站点名称',
-    int interruptLimit;//中断次数
-    double levelMax;//最高水位
-    double levelMin;//最低水位
-    double upMax;//最高上涨量
-    double belowMin;//最高降低量
-    int duration;//准许水位不变的最高时长
+    Integer interruptLimit;//中断次数
+    Double levelMax;//最高水位
+    Double levelMin;//最低水位
+    Double upMax;//最高上涨量
+    Double downMax;//最高降低量
+    Integer duration;//准许水位不变的最高时长
     String exceptionValue;
 
-    public String getExceptionValue() {
-        return exceptionValue;
+    @Override
+    public String toString() {
+        return "APEntity{" +
+                "id=" + id +
+                ", sensorCode=" + sensorCode +
+                ", sensorName='" + sensorName + '\'' +
+                ", interruptLimit=" + interruptLimit +
+                ", levelMax=" + levelMax +
+                ", levelMin=" + levelMin +
+                ", upMax=" + upMax +
+                ", downMax=" + downMax +
+                ", duration=" + duration +
+                ", exceptionValue='" + exceptionValue + '\'' +
+                '}';
     }
 
-    public void setExceptionValue(String exceptionValue) {
-        this.exceptionValue = exceptionValue;
-    }
-
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public int getSensorCode() {
+    public Integer getSensorCode() {
         return sensorCode;
     }
 
-    public void setSensorCode(int sensorCode) {
+    public void setSensorCode(Integer sensorCode) {
         this.sensorCode = sensorCode;
     }
 
@@ -54,52 +62,59 @@ public class APEntity {
         this.sensorName = sensorName;
     }
 
-    public int getInterruptLimit() {
+    public Integer getInterruptLimit() {
         return interruptLimit;
     }
 
-    public void setInterruptLimit(int interruptLimit) {
+    public void setInterruptLimit(Integer interruptLimit) {
         this.interruptLimit = interruptLimit;
     }
 
-    public double getLevelMax() {
+    public Double getLevelMax() {
         return levelMax;
     }
 
-    public void setLevelMax(double levelMax) {
+    public void setLevelMax(Double levelMax) {
         this.levelMax = levelMax;
     }
 
-    public double getLevelMin() {
+    public Double getLevelMin() {
         return levelMin;
     }
 
-    public void setLevelMin(double levelMin) {
+    public void setLevelMin(Double levelMin) {
         this.levelMin = levelMin;
     }
 
-    public double getUpMax() {
+    public Double getUpMax() {
         return upMax;
     }
 
-    public void setUpMax(double upMax) {
+    public void setUpMax(Double upMax) {
         this.upMax = upMax;
     }
 
-    public double getBelowMin() {
-        return belowMin;
+    public Double getDownMax() {
+        return downMax;
     }
 
-    public void setBelowMin(double belowMin) {
-        this.belowMin = belowMin;
+    public void setDownMax(Double downMax) {
+        this.downMax = downMax;
     }
 
-    public int getDuration() {
+    public Integer getDuration() {
         return duration;
     }
 
-    public void setDuration(int duration) {
+    public void setDuration(Integer duration) {
         this.duration = duration;
     }
 
+    public String getExceptionValue() {
+        return exceptionValue;
+    }
+
+    public void setExceptionValue(String exceptionValue) {
+        this.exceptionValue = exceptionValue;
+    }
 }

@@ -17,12 +17,11 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -32,7 +31,7 @@ import java.util.stream.IntStream;
  * @data ${DATA}-9:54
  */
 @Component
-public  class RealAirTemperatureValve implements Valve<RealVo,ATEntity,Real>,ApplicationContextAware {
+public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,ApplicationContextAware {
 
     private final Logger logger = LoggerFactory.getLogger( this.getClass() );
 
@@ -42,189 +41,306 @@ public  class RealAirTemperatureValve implements Valve<RealVo,ATEntity,Real>,App
 
 
     @Override
-    public void beforeProcess(List<RealVo> realList,Map<String,Real> compare) {
-        RealVo one = realList.get( 0 );
-        //----------------------获取气温配置表---------------------------
+    public void beforeProcess(List <RealVo> realData) {
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
+
+        //-------------------一天内的数据-----------------
+        String before=LocalDateUtil
+                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
+                .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before,ConstantConfig.WAT);
+        //----------------------获取气温配置表---------------------------
         //获取at
-        Map<Integer, ATEntity> config = Optional.of(abnormalDetailMapper.fetchAllAT())
+        Map<Integer, ATEntity> configMap = Optional.of(abnormalDetailMapper.fetchAllAT())
                 .get()
                 .stream()
                 .collect(Collectors.toMap(ATEntity::getSensorCode, b -> b));
-        //-----------------------获取气温实时数据----------------------
-        Map<Integer, RealVo> map = realList.stream()
-                .filter(
-                        e -> ((e.getSenId()%100)==ConstantConfig.WAT)
-                ).collect(Collectors.toMap(RealVo::getSenId, a -> a));
-        //---------------------筛选出气温历史数据---------
-        Map <String, Real> maps = compare.keySet().stream().filter(
-                e -> (e.split( "," )[1].contains( one.getSenId() % 100 + "" ))
-        ).collect( Collectors.toMap( e -> e, e -> compare.get( e ) ) );
-        doProcess(map, config, LocalDateUtil
-                .dateToLocalDateTime(one.getTime()),maps);
+
+        doProcess( realData,previousData, configMap );
+
     }
 
 
     @Override
-    public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, ATEntity> configMap, LocalDateTime time,
-                          Map<String, Real> finalCompareMap) {
+    public void doProcess(List <RealVo> realData,List<Real> previousData,Map <Integer, ATEntity> configMap) {
         try {
+            //---------------已经存在入库得数据-----------------
+            Map<String, Real> compareMap=new HashMap<>(3000);
+            if (previousData.size() > 0) {
+                compareMap = previousData.stream()
+                        .collect(Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
+                                ,account -> account));
+            }
+            //--------------------筛选出雨量实时数据-------------------------
+            Map<Integer, RealVo> mapval = realData.stream().filter(e -> ((e.getSenId() % 100) == ConstantConfig.WAT))
+                    .collect(Collectors.toMap(RealVo::getSenId, a -> a));
+
+            //--------------------获取回归模型-------------------------
+            List<RegressionEntity> rlists = abnormalDetailMapper.getRegression();
+
+            //-------------------------------------------------------------
             final List[] exceptionContainer = {new ArrayList <AbnormalDetailEntity>()};
-            configMap.keySet().stream().forEach( e -> {
-                //        最大值最小值比较
-                ATEntity config = configMap.get( e );
-                RealVo vo = mapval.get( e );
-                boolean flag = false;
-                if (vo != null) {
-                    double realvalue = mapval.get( e ).getFACTV();
-                    if (realvalue < config.getLevelMin()) {
-                        exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                .date( LocalDateUtil
-                                        .dateToLocalDateTime( vo.getTime() )
-                                        .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                .sensorCode( vo.getSenId() )
-                                .dataError( DataError.LESS_AIRTEMPRATURE.getErrorCode() )
-                                .errorValue( realvalue )
-                                .build() );
-                    } else if (realvalue > config.getLevelMax()) {
-                        exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                .date( LocalDateUtil
-                                        .dateToLocalDateTime( vo.getTime() )
-                                        .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                .sensorCode( vo.getSenId() )
-                                .errorValue( realvalue )
-                                .dataError( DataError.MORE_AIRTEMPRATURE.getErrorCode() )
-                                .build() );
+            String date = LocalDateUtil.dateToLocalDateTime(realData.get(0).getTime())
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));  // 记录时间
+            logger.info("气温数据预计到达数量"+configMap.size()+",实际到达数量"+mapval.size());
+
+            Iterator<Map.Entry<Integer, ATEntity>> iterator = configMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Integer, ATEntity> entry = iterator.next();
+
+                try {
+                    RealVo vo = mapval.get(entry.getKey());  // 元素数据
+                    ATEntity config = entry.getValue();  // 元素配置
+
+                    Boolean flag = false;
+                    Integer sensorCode = entry.getKey();  // 记录传感器元素编号
+                    String dataErrorCode = null;  // 记录异常错误编号
+                    Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
+                    String descStr = "RTSQ："+date+","+sensorCode+","+realvalue;
+
+
+                    //---------------------------中断分析-------------------------
+                    if(!flag){
+                        if (vo == null) {  // MQ数据包数据不存在
+                            dataErrorCode = DataError.BREAK_AIRTEMPRATURE.getErrorCode();
+                            flag = true;
+                            descStr +="==>中断分析:数据发生中断！";
+                        }else{
+                            descStr +="==>中断分析:通过！";
+                        }
                     }
+
+                    //-----------------------------典型值分析---------------------
+                    if (!flag) { //
+                        String JsonConfig = config.getExceptionValue();
+                        if (null != JsonConfig && !"".equals(JsonConfig)) {
+                            Iterator<Object> jsonIterator = null;
+
+                            try {
+                                jsonIterator = JSONArray.parseArray(JsonConfig).iterator();
+
+                                while (jsonIterator.hasNext()) {
+                                    JSONObject one = (JSONObject) jsonIterator.next();
+                                    if (Double.parseDouble(one.get("error_value").toString()) == realvalue) {
+                                        dataErrorCode = one.get("error_code").toString();
+                                        flag = true;
+                                        descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
+                                        break;
+                                    }
+                                }
+                                if (flag == false) {
+                                    descStr += "==>典型值分析:通过!";
+                                }
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        } else {
+                            // 典型值配置没有
+                            descStr += "==>典型值分析:典型值无配置,典型值分析跳过!";
+                        }
+                    }
+
+                    //---------------------------极值分析-------------------------
+                    if(!flag){
+                        if (realvalue < config.getLevelMin()) {
+                            dataErrorCode = DataError.LESS_AIRTEMPRATURE.getErrorCode();
+                            flag = true;
+                            descStr += "==>极值分析:小于最小值:"+config.getLevelMin()+" !<"+realvalue+" <"+config.getLevelMax();
+                        } else if (realvalue > config.getLevelMax()) {
+                            dataErrorCode = DataError.MORE_AIRTEMPRATURE.getErrorCode();
+                            flag = true;
+                            descStr += "==>极值分析得到:超过最大值:"+config.getLevelMin()+" <"+realvalue+" !<"+config.getLevelMax();
+                        }else{
+                            descStr += "==>极值分析得到:通过！";
+                        }
+                    }
+
                     //---------------------------变化率分析-------------------------
                     if (!flag) {
-                        Real real = finalCompareMap.get( vo.getTime().toString() + "," + e );
-                        if (real != null) {
-                            BigDecimal frant = BigDecimal.valueOf( real.getRealVal() );
-                            BigDecimal end = BigDecimal.valueOf( vo.getFACTV() );
-                            if (frant.subtract( end ).doubleValue() > config.getUpMax()) {
-                                exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                        .date( LocalDateUtil
-                                                .dateToLocalDateTime( vo.getTime() )
-                                                .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                        .sensorCode( vo.getSenId() )
-                                        .errorValue( vo.getFACTV() )
-                                        .dataError( DataError.UP_MAX_AIRTEMPRATURE.getErrorCode() )
-                                        .build() );
-                                flag = true;
-                            } else {
-                                if (frant.subtract( end ).doubleValue() < config.getBelowMin()) {
-                                    exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                            .date( LocalDateUtil
-                                                    .dateToLocalDateTime( vo.getTime() )
-                                                    .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) ) )
-                                            .sensorCode( vo.getSenId() )
-                                            .errorValue( vo.getFACTV() )
-                                            .dataError( DataError.DOWN_MAX_AIRTEMPRATURE.getErrorCode() )
-                                            .build() );
+                        if(null == config.getDownMax() || "".equals(config.getDownMax())){
+                            descStr +="==>变化率分析:缺少配置，跳过变化率分析！";
+                        }else{
+                            String before=LocalDateUtil
+                                    .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                            Real real = compareMap.get( before + "," + sensorCode );
+                            if (real != null) {
+                                BigDecimal frant = BigDecimal.valueOf( real.getRealVal() );
+                                BigDecimal end = BigDecimal.valueOf(realvalue);
+                                double result  = end.subtract(frant).doubleValue();
+
+                                if (result > config.getUpMax()) {
+                                    dataErrorCode = DataError.UP_MAX_AIRTEMPRATURE.getErrorCode();
                                     flag = true;
+                                    descStr+="==>变化率分析:上升值超过最大值配置！"+end+" -"+frant+" ="+result+" >"+config.getUpMax();
+                                } else if(result < config.getDownMax()) {
+                                    dataErrorCode = DataError.DOWN_MAX_AIRTEMPRATURE.getErrorCode();
+                                    flag = true;
+                                    descStr+="==>变化率分析:下降值超过最大值配置！"+end+" -"+frant+" ="+result+" <"+config.getDownMax();
+                                }else{
+                                    descStr += "==>变化率分析:通过！";
                                 }
+                            }else{
+                                //为了防止初次启动数据无法查询的问题
+                                descStr += "==>变化率分析:跳过分析！"+"时间为"+before+"的数据找不到！";
                             }
                         }
                     }
+
                     //------------------------------过程线分析----------------------
                     if (!flag) {
-                        List <Double> continueData = finalCompareMap.entrySet()
-                                .stream().map( f -> f.getValue().getRealVal() )
-                                .collect( Collectors.toList() );
-                        double[] compare={999};
-                        int[] times={0};
-                        continueData.stream().forEach(k->{
-                            if(k!=compare[0]){
-                                compare[0]=k;
-                            }else{
-                                times[0]++;
-                            }
-                        });
-                        if(config.getDuration() / 5<=times[0]){
-                            exceptionContainer[0].add(new AbnormalDetailEntity.builer()
-                                    .date(LocalDateUtil
-                                            .dateToLocalDateTime(vo.getTime())
-                                            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-                                    .sensorCode(vo.getSenId())
-                                    .dataError(DataError.DURING_AIRTEMPRATURE.getErrorCode())
-                                    .build());
-                        }
-                        flag=true;
-                    }
-                    //-----------------------------典型值分析---------------------
-                    if (flag) {
-                        String JsonConfig = config.getExceptionValue();
-                        if (!JsonConfig.equals( "" ) && JsonConfig != null) {
-                            JSONArray array = JSONArray.parseArray( JsonConfig );
-                            IntStream.range( 0, array.size() ).forEach( i -> {
-                                JSONObject one = (JSONObject) array.get( i );
-                                if (Double.parseDouble( one.get( "error_value" ).toString() ) == realvalue) {
-                                    String date = LocalDateUtil
-                                            .dateToLocalDateTime( vo.getTime() )
-                                            .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) );
-                                    exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                            .date( date )
-                                            .sensorCode( config.getSensorCode() )
-                                            .dataError( one.get( "error_code" ).toString() )
-                                            .build() );
-                                }
-                            } );
-                        }
-                    }
-                } else {
-                    //---------------------------气温不存在-------------------------
-                    String date = time
-                            .format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) );
-                    exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                            .date( date )
-                            .sensorCode( config.getSensorCode() )
-                            .dataError( DataError.BREAK_AIRTEMPRATURE.getErrorCode() )
-                            .build() );
-                }
-                    /*//实时数据丢失 71 72  73 75 81 83 84 85 86 89
-                    int[] array = {71, 72, 73, 75, 81, 83, 84, 85, 86, 89};
-                    int diff = e - e.intValue() % 100;
-                    int flag = 0;
-                    for (int one = 0; one < array.length; one++) {
-                        if (mapval.containsKey( diff + array[one] )) {
-                            return;
-                        }
-                        flag++;
-                    }
-                    String now = time.format( DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" ) );
-                    if (flag == array.length) {
-                        //均不存在 diff+89；判断电压
-                        int code = (config.getSensorCode() -
-                                config.getSensorCode() % 100 + 89);
-                        Real ele = compare.get( code );
-                        if (ele != null) {
-                            //测站上传故障
-                            exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                    .date( now )
-                                    .sensorCode( config.getSensorCode() )
-                                    .errorPeriod( now )
-                                    .equipmentError( DataError.EQ_UPLOAD.getErrorCode() )
-                                    .build() );
+                        if (null == config.getDuration() || "".equals(config.getDuration())) {
+                            descStr += "==>过程线分析:缺少配置，跳过过程线分析！";
+                        } else if (config.getDuration() < 10) {
+                            descStr += "==>过程线分析:配置时间过短，跳过过程线分析！";
                         } else {
-                            //断电故障
-                            exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                    .date( now )
-                                    .sensorCode( config.getSensorCode() )
-                                    .errorPeriod( now )
-                                    .equipmentError( DataError.EQ_ELESHUTDOWN.getErrorCode() )
-                                    .build() );
+                            String before = LocalDateUtil
+                                    .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(config.getDuration())
+                                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            List<Real> realList = previousData.stream().filter(real -> real.getSensorCode() == sensorCode)
+                                    .filter(real -> {
+                                        try {
+                                            return sdf.parse(real.getTime()).after(sdf.parse(before));
+                                        } catch (ParseException e) {
+                                            e.printStackTrace();
+                                        }
+                                        return false;
+                                    })
+                                    .collect(Collectors.toList());
+
+                            int needCount = config.getDuration() / 5;
+                            if (((float) realList.size() / needCount) < 0.8) {
+                                descStr += "==>过程线分析:缺少依赖数据，跳过过程线分析！";
+                            } else {
+                                Map<String, Double> map = realList.stream().collect(Collectors.toMap(Real::getTime, Real::getRealVal));
+
+                                // 全部数据相等标志
+                                if (realList.stream().allMatch(element -> element.getRealVal().equals(realvalue))) {
+                                    flag = true;
+                                    dataErrorCode = DataError.DOWN_MAX_AIRTEMPRATURE.getErrorCode();
+                                    descStr += "==>过程线分析:过程线异常！" + realList.size()+"次数据相等，"+map;
+                                } else {
+                                    descStr += "==>过程线分析:过程线分析通过！";
+                                }
+                            }
                         }
-                    } else {
-                        //测站上传故障
+                    }  // 过程线分析结束
+
+                    //---------------------------回归模型分析-------------------------
+                    if(!flag){
+                        List<RegressionEntity> regressionFunc = rlists.stream()
+                                .filter(object -> object.getSectionCode().equals(sensorCode))
+                                .collect(Collectors.toList());
+
+                        if (regressionFunc.size() <= 0) {  // 回归模型不存在
+                            descStr +="==>回归模型分析:回归模型不存在，跳过分析！";
+                        }
+                        else{
+                            RegressionEntity regressionEntity= regressionFunc.get(0);
+                            Double arg0 = regressionEntity.getArg0();
+                            Double arg1 = regressionEntity.getArg1();
+                            Double redisualMax = regressionEntity.getAbResidualMax();
+                            Integer sensorCode1 = regressionEntity.getRef1SectionCode();
+                            Double value1 = compareMap.get( date + "," + sensorCode1 ).getRealVal();
+
+                            if (regressionEntity.getRefNum() == 1){
+                                if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ){
+                                    descStr +="==>回归模型分析:回归模型参数不全，跳过分析！"+regressionEntity.toString();
+                                }
+                                else {
+                                    Double predictValue = value1 * arg1 + arg0;
+                                    if (Math.abs(predictValue - realvalue)  > redisualMax){
+                                        flag = true;
+                                        descStr +="==>回归模型分析:残差过大，回归模型异常！"+
+                                                "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
+                                    }
+                                    else{
+                                        descStr +=";回归模型分析得到==>残差正常，回归模型正常！"+
+                                                "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
+                                    }
+                                }
+                            }
+                            else if (regressionEntity.getRefNum() == 2){
+                                Double arg2 = regressionEntity.getArg2();
+                                Integer sensorCode2 = regressionEntity.getRef2SectionCode();
+                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
+
+                                if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
+                                        null == arg2 || null == value2 ){
+                                    descStr +=";回归模型分析得到==>回归模型参数不全，跳过分析！"+regressionEntity.toString();
+                                }
+                                else {
+                                    Double predictValue = value1 * arg1 + value2 * arg2 + arg0;
+                                    if (Math.abs(predictValue - realvalue) > redisualMax){
+                                        flag = true;
+                                        descStr +="==>回归模型分析:残差过大，回归模型异常！"+
+                                                "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
+                                    }
+                                    else{
+                                        descStr +="==>回归模型分析:残差正常，回归模型正常！"+
+                                                "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
+                                    }
+                                }
+                            }
+                            else if (regressionEntity.getRefNum() == 3){
+                                Double arg2 = regressionEntity.getArg2();
+                                Double arg3 = regressionEntity.getArg3();
+                                Integer sensorCode2 = regressionEntity.getRef2SectionCode();
+                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
+                                Integer sensorCode3 = regressionEntity.getRef3SectionCode();
+                                Double value3 = compareMap.get( date + "," + sensorCode3 ).getRealVal();
+
+                                if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
+                                        null == arg2 || null == value2 || null == arg3 || null == value3){
+                                    descStr +="==>回归模型分析:回归模型参数不全，跳过分析！"+regressionEntity.toString();
+                                }
+                                else {
+                                    Double predictValue = arg0 + value1 * arg1 + value2 * arg2 + value3 * arg3;
+                                    if (Math.abs(predictValue - realvalue) > redisualMax){
+                                        flag = true;
+                                        descStr +="==>回归模型分析:残差过大，回归模型异常！"+
+                                                "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
+                                    }
+                                    else{
+                                        descStr +="==>回归模型分析:残差正常，回归模型正常！"+
+                                                "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
+                                    }
+                                }
+                            }else{
+                                descStr +="==>回归模型分析:回归模型参数不全，跳过分析！";
+                            }
+
+                            if (flag){
+                                dataErrorCode = DataError.REGRESSION_EXCEPTION_AIRTEMPRATURE.getErrorCode();
+                            }
+                        }
+                    }  // 回归模型分析结束
+
+                    System.out.println(descStr);
+                    if(flag){  // 出现异常才往异常表添加数据
                         exceptionContainer[0].add( new AbnormalDetailEntity.builer()
-                                .date( now )
-                                .sensorCode( config.getSensorCode() )
-                                .errorPeriod( now )
-                                .equipmentError( DataError.EQ_UPLOAD.getErrorCode() )
+                                .date(date)
+                                .sensorCode( sensorCode )
+                                .errorValue( realvalue )
+                                .dataError(dataErrorCode)
+                                .description(descStr)
                                 .build() );
-                    }*/
-            } );
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
             if (exceptionContainer[0].size() > 0) {
                 abnormalDetailMapper.insertFinal( exceptionContainer[0] );
                 exceptionContainer[0] = null;
@@ -239,19 +355,11 @@ public  class RealAirTemperatureValve implements Valve<RealVo,ATEntity,Real>,App
         return context.getBean(requiredType);
     }
 
-    @Override
-    public void beforeProcess(List<RealVo> val) {
-
-    }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
 
-    @Override
-    public void doProcess(Map<Integer, RealVo> mapval, Map<Integer, ATEntity> configMap) {
-
-    }
 
 }

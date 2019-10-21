@@ -5,10 +5,8 @@ import com.siti.wisdomhydrologic.analysis.pipeline.PipelineValve;
 import com.siti.wisdomhydrologic.analysis.pipeline.valve.*;
 import com.siti.wisdomhydrologic.config.ColorsExecutor;
 import com.siti.wisdomhydrologic.config.RabbitMQConfig;
-import com.siti.wisdomhydrologic.analysis.entity.Real;
 import com.siti.wisdomhydrologic.analysis.mapper.*;
 import com.siti.wisdomhydrologic.analysis.vo.RealVo;
-import com.siti.wisdomhydrologic.util.LocalDateUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -18,14 +16,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -39,8 +35,6 @@ public class RealListener {
 
     @Resource
     RealMapper realMapper;
-    @Resource
-    AbnormalDetailMapper abnormalDetailMapper;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private AtomicInteger maxBatch = new AtomicInteger(0);
     private AtomicBoolean flag = new AtomicBoolean(false);
@@ -49,10 +43,12 @@ public class RealListener {
 
     @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL)
     @RabbitHandler
-    public void realProcess(List<RealVo> RealVo, Channel channel, Message message) {
+    public void realProcess(List<RealVo> realVos, Channel channel, Message message) {
+        Thread th=Thread.currentThread();
+        System.out.println( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"线程ID:"+th.getId()+realVos.get(0).toString());
         try {
-            if (RealVo.size() > 0) {
-                calPackage(RealVo);
+            if (realVos.size() > 0) {
+                calPackage(realVos);
             } else {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
             }
@@ -121,18 +117,7 @@ public class RealListener {
         Runnable fetchTask = () -> {
             List<RealVo> voList = receiver.poll();
             if (voList != null) {
-                //-------------------一天内的数据-----------------
-                String before=LocalDateUtil
-                        .dateToLocalDateTime(voList.get(0).getTime()).plusHours(-2)
-                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                List<Real> realVos = abnormalDetailMapper.selectBeforeFiveReal(before);
-                Map<String, Real> compareMap=new HashMap<>();
-                if (realVos.size() > 0) {
-                    compareMap = realVos.stream()
-                            .collect(Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
-                                    ,account -> account));
-                }
-                finalValvo.doInterceptor(voList,compareMap);
+                finalValvo.doInterceptor(voList);
             }
         };
         while (true) {

@@ -41,8 +41,6 @@ import java.util.stream.IntStream;
 public class HourListener {
 
     @Resource
-    AbnormalDetailMapper abnormalDetailMapper;
-    @Resource
     private DayDataServiceImpl dayDataService;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -78,13 +76,13 @@ public class HourListener {
         splitList(List, 100);
         if (flag.compareAndSet(false, true)) {
             PipelineValve finalValvo=new PipelineValve();
-            finalValvo.setHandler(new HourAirPressValve());
-            finalValvo.setHandler(new HourAirTempratrueValve());
-            finalValvo.setHandler(new HourFlowVelocitylValve());
-            finalValvo.setHandler(new HourlWaterLevelValve());
-            finalValvo.setHandler(new HourTideValve());
-            finalValvo.setHandler(new HourWindDirectionValve());
-            finalValvo.setHandler(new HourWindSpeedValve());
+//            finalValvo.setHandler(new HourAirPressValve());
+//            finalValvo.setHandler(new HourAirTempratrueValve());
+//            finalValvo.setHandler(new HourFlowVelocitylValve());
+//            finalValvo.setHandler(new HourlWaterLevelValve());
+//            finalValvo.setHandler(new HourTideValve());
+//            finalValvo.setHandler(new HourWindDirectionValve());
+//            finalValvo.setHandler(new HourWindSpeedValve());
 
             //HourRegressionValve
             new Thread(() -> {
@@ -119,7 +117,7 @@ public class HourListener {
         Runnable fetchTask = () -> {
             List<DayVo> voList = receiver.poll();
             if (voList != null) {
-                //-------------------一天内的数据-----------------
+              /*  //-------------------一天内的数据-----------------
                 List<Real> realVos = abnormalDetailMapper.selectHourPeriod(LocalDateUtil
                         .dateToLocalDateTime(voList.get(0).getTime()).plusHours(-1)
                         .format( DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),LocalDateUtil
@@ -130,8 +128,8 @@ public class HourListener {
                     compareMap = realVos.stream()
                             .collect( Collectors.toMap((real)->real.getTime().toString()+","+real.getSensorCode()
                                     ,account -> account));
-                }
-                finalValvo.doInterceptor(voList,compareMap);
+                }*/
+                finalValvo.doInterceptor(voList);
             }
         };
         while (true) {

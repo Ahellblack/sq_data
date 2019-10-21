@@ -7,7 +7,7 @@ spring:
 #rabbitmq相关配置
 #rabbitmq相关配置dell-PC
   rabbitmq:
-     host: 114.80.231.178 #10.1.30.24 #10.1.3.202
+     host: 172.20.50.115 #10.1.30.24 #10.1.3.202
      port: 5671
      username: siti #siti
      password: siti  #siti@sq
@@ -15,13 +15,21 @@ spring:
      publisher-returns: true
      virtual-host: siti
      listener:
-        simple:
-          acknowledge-mode: manual #采用手动应答
-          concurrency: 1
-          max-concurrency: 1
-          retry:
-            enabled: false #是否支持重试
-          prefetch: 10
+       simple:
+         acknowledge-mode: manual #采用手动应答
+         concurrency: 2
+         max-concurrency: 2
+         retry:
+           enabled: true #是否支持重试
+         prefetch: 1
+#        simple:
+#          acknowledge-mode: manual #采用手动应答
+#          concurrency: 1
+#          max-concurrency: 1
+#          retry:
+#            enabled: false #是否支持重试
+#          prefetch: 10
+
 
 logback:
   logHome: /sq_data/log/
