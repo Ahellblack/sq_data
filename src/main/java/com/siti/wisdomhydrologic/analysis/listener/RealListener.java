@@ -41,11 +41,11 @@ public class RealListener {
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<RealVo>> receiver;
 
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL, containerFactory = "firstRabbitListenerConnectionFactory")
     @RabbitHandler
     public void realProcess(List<RealVo> realVos, Channel channel, Message message) {
-        Thread th=Thread.currentThread();
-        System.out.println( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"线程ID:"+th.getId()+realVos.get(0).toString());
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                .format(new Date())+"线程ID:"+Thread.currentThread().getId()+realVos.get(0).toString());
         try {
             if (realVos.size() > 0) {
                 calPackage(realVos);

@@ -1,4 +1,4 @@
-/*
+
 package com.siti.wisdomhydrologic.analysis.listener;
 
 import com.rabbitmq.client.Channel;
@@ -26,12 +26,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
-*/
+
 /**
  * Created by DC on 2019/6/12.
  *
  * @data ${DATA}-15:23
- *//*
+ */
 
 @Component
 @Transactional
@@ -46,7 +46,7 @@ public class DayListener {
     private AtomicBoolean flag = new AtomicBoolean(false);
     private AtomicInteger sumSize = new AtomicInteger(0);
     private BlockingQueue<List<DayVo>> receiver;
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_DAY)
+    @RabbitListener(queues = RabbitMQConfig.QUEUE_DAY, containerFactory = "firstRabbitListenerConnectionFactory")
     @RabbitHandler
     public void dayprocess(List<DayVo> vo, Channel channel, Message message) {
         try {
@@ -67,10 +67,10 @@ public class DayListener {
         }
     }
 
-    */
+
 /**
      * 判断是否丢包记录日志
-     *//*
+     */
 
     private void calPackage(List<DayVo> List, Channel channel, Message message) throws Exception {
         DayVo vo = List.get(0);
@@ -97,10 +97,10 @@ public class DayListener {
                 currentbatch, sumSize.get(), currentsize, vo.getStatus());
     }
 
-    */
+
 /**
      * 触发一次消费任务
-     *//*
+     */
 
     private void multiProcess(PipelineValve valvo) {
         ColorsExecutor colors = new ColorsExecutor();
@@ -110,7 +110,7 @@ public class DayListener {
             List<DayVo> voList = receiver.poll();
             if (voList != null) {
                 splitList(voList, 100);
-                valvo.doInterceptor(voList);
+                //valvo.doInterceptor(voList);
             }
         };
         while (true) {
@@ -134,7 +134,3 @@ public class DayListener {
     }
 }
 
-
-
-
-*/

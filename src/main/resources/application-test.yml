@@ -2,26 +2,11 @@ spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     username: root
-    password: root
-    url: jdbc:mysql://10.1.30.207:3306/wh?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
+    password: ITS@cai208
+    url: jdbc:mysql://10.1.30.208:3306/wh?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
 #rabbitmq相关配置
-#  rabbitmq:
-#     host: 10.1.30.202 #10.1.30.24
-#     port: 5672
-#     username: siti
-#     password: siti@sq
-#     publisher-confirms: true
-#     publisher-returns: true
-#     listener:
-#        simple:
-#          acknowledge-mode: manual #采用手动应答
-#          concurrency: 1
-#          max-concurrency: 1
-#          retry:
-#            enabled: false #是否支持重试
-#          prefetch: 1
-#     virtual-host: /
   rabbitmq:
+    first:
        host: 114.80.231.178 #10.1.30.24
        port: 5671
        username: shuiwen
@@ -37,6 +22,17 @@ spring:
             retry:
               enabled: true #是否支持重试
             prefetch: 1
+    second:
+      host: 114.80.231.178 #10.1.30.24
+      port: 5671
+      username: sq_dev
+      password: 123456
+      publisher-confirms: true
+      publisher-returns: true
+      virtual-host: sq_dev
+
+  devstatusquene: quene-test
+
 logback:
   logHome: /sq_data/log/
   logName: sq

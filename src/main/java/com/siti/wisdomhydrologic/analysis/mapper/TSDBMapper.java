@@ -14,9 +14,6 @@ import java.util.List;
  * Created by dell on 2019/7/23.
  */
 public interface TSDBMapper {
-
-
-
     @Insert("<script>INSERT INTO `${database}` " +
             "(`sensor_code`,`sensor_data_time`, `sensor_data_value0`,`sensor_data_value1`,`sensor_data_value2`,`sensor_data_value3`,`sensor_data_value4`,`sensor_data_value5`,`sensor_data_value6`,`sensor_data_value7`,`sensor_data_value8`,`sensor_data_value9`,`sensor_data_value10`,`sensor_data_value11`," +
             "`sensor_data_value_status0`,`sensor_data_value_status1`,`sensor_data_value_status2`,`sensor_data_value_status3`,`sensor_data_value_status4`,`sensor_data_value_status5`,`sensor_data_value_status6`,`sensor_data_value_status7`,`sensor_data_value_status8`,`sensor_data_value_status9`,`sensor_data_value_status10`,`sensor_data_value_status11`,`sensor_type_id`,`sensor_type_name`,`station_code`,`station_name`) " +

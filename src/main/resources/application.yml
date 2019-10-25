@@ -1,6 +1,6 @@
 server:
   port: 8066
-  context-path: /sq
+  context-path: /sq_data
 
 quartz:
   enabled: true
@@ -8,7 +8,7 @@ spring:
   thymeleaf:
     mode: LEGACYHTML5
   profiles:
-     active: prod
+     active: test
 mybatis:
   configuration:
     mapUnderscoreToCamelCase: true
