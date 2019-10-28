@@ -2,8 +2,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     username: root
-    password: ITS@cai208
-    url: jdbc:mysql://10.1.30.208:3306/wh?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
+    password: root
+    url: jdbc:mysql://10.1.30.205:3306/wh?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
 #rabbitmq相关配置
   rabbitmq:
     first:
