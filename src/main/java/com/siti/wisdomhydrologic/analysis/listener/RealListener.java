@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
@@ -51,16 +52,17 @@ public class RealListener {
                 calPackage(realVos);
             } else {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                logger.error("real queue:{} 数据为空！", LocalDateTime.now().toString());
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
         }finally {
-            //----------------------后面可以优化---------------------
-            try {
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+//            //----------------------后面可以优化---------------------
+//            try {
+//                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+//            } catch (IOException e1) {
+//                e1.printStackTrace();
+//            }
         }
     }
 

@@ -93,7 +93,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                     String dataErrorCode = null;  // 记录异常错误编号
                     Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
                     String descStr = "RTSQ："+date+","+sensorCode+","+realvalue;
-
+                    String savedStr = "";  // 用来记录错误原因，后续写入数据库中
 
                     //---------------------------中断分析-------------------------
                     if(!flag){
@@ -101,6 +101,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             dataErrorCode = DataError.BREAK_AirPress.getErrorCode();
                             flag = true;
                             descStr +="==>中断分析:数据发生中断！";
+                            savedStr = "元素"+sensorCode+",数据发生中断！";
                         }else{
                             descStr +="==>中断分析:通过！";
                         }
@@ -121,6 +122,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                         dataErrorCode = one.get("error_code").toString();
                                         flag = true;
                                         descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
+                                        savedStr = "元素"+sensorCode+ ",出现典型值"+one.get("error_value") +"!";
                                         break;
                                     }
                                 }
@@ -144,10 +146,12 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             dataErrorCode = DataError.LESS_AirPress.getErrorCode();
                             flag = true;
                             descStr += "==>极值分析:小于最小值:"+config.getLevelMin()+" !<"+realvalue+" <"+config.getLevelMax();
+                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",小于最小值配置"+config.getLevelMin()+"!";
                         } else if (realvalue > config.getLevelMax()) {
                             dataErrorCode = DataError.MORE_AirPress.getErrorCode();
                             flag = true;
                             descStr += "==>极值分析得到:超过最大值:"+config.getLevelMin()+" <"+realvalue+" !<"+config.getLevelMax();
+                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",大于最大值配置"+config.getLevelMax()+"!";
                         }else{
                             descStr += "==>极值分析得到:通过！";
                         }
@@ -171,10 +175,12 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                     dataErrorCode = DataError.UP_MAX_AirPress.getErrorCode();
                                     flag = true;
                                     descStr+="==>变化率分析:上升值超过最大值配置！"+end+" -"+frant+" ="+result+" >"+config.getUpMax();
+                                    savedStr = "元素"+sensorCode+",当前上升值" + result + ",超过最大上升值" + config.getUpMax()+"!";
                                 } else if(result < config.getDownMax()) {
                                     dataErrorCode = DataError.DOWN_MAX_AirPress.getErrorCode();
                                     flag = true;
                                     descStr+="==>变化率分析:下降值超过最大值配置！"+end+" -"+frant+" ="+result+" <"+config.getDownMax();
+                                    savedStr = "元素"+sensorCode+",当前下降值" + result + ",超过最大下降值" + config.getDownMax()+"!";
                                 }else{
                                     descStr += "==>变化率分析:通过！";
                                 }
@@ -200,7 +206,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             List<Real> realList = previousData.stream().filter(real -> real.getSensorCode() == sensorCode)
                                     .filter(real -> {
                                         try {
-                                            return sdf.parse(real.getTime()).after(sdf.parse(before));
+                                            return sdf.parse(real.getTime()).after(sdf.parse(before)) && sdf.parse(real.getTime()).before(sdf.parse(date));
                                         } catch (ParseException e) {
                                             e.printStackTrace();
                                         }
@@ -217,8 +223,9 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                 // 全部数据相等标志
                                 if (realList.stream().allMatch(element -> element.getRealVal().equals(realvalue))) {
                                     flag = true;
-                                    dataErrorCode = DataError.DOWN_MAX_AirPress.getErrorCode();
+                                    dataErrorCode = DataError.DURING_AirPress.getErrorCode();
                                     descStr += "==>过程线分析:过程线异常！" + realList.size()+"次数据相等，"+map;
+                                    savedStr = "元素"+sensorCode+",当前连续"+realList.size()+"次数据相等"+"!";
                                 } else {
                                     descStr += "==>过程线分析:过程线分析通过！";
                                 }
@@ -249,11 +256,12 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                 }
                                 else {
                                     Double predictValue = value1 * arg1 + arg0;
-                                    if (Math.abs(predictValue - realvalue)  > redisualMax){
+                                    if ( Math.abs(predictValue - realvalue) > redisualMax){
                                         flag = true;
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
+                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +=";回归模型分析得到==>残差正常，回归模型正常！"+
@@ -278,6 +286,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
+                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +="==>回归模型分析:残差正常，回归模型正常！"+
@@ -305,6 +314,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
+                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +="==>回归模型分析:残差正常，回归模型正常！"+
@@ -329,7 +339,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                 .sensorCode( sensorCode )
                                 .errorValue( realvalue )
                                 .dataError(dataErrorCode)
-                                .description(descStr)
+                                .description(savedStr)
                                 .build() );
                     }
                 } catch (Exception e) {

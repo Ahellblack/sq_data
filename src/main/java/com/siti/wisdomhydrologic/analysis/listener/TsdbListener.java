@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -61,15 +62,16 @@ public class TsdbListener {
                 calPackage(vo, channel, message);
             } else {
                 channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                logger.error("tsdb queue:{} 数据为空！", LocalDateTime.now().toString());
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
         }finally {
-            try {
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+//            try {
+//                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+//            } catch (IOException e1) {
+//                e1.printStackTrace();
+//            }
         }
     }
 

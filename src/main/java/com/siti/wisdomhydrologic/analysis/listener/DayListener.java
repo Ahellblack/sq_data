@@ -59,11 +59,11 @@ public class DayListener {
         } catch (Exception e) {
             logger.error(e.getMessage());
         }finally {
-            try {
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+//            try {
+//                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+//            } catch (IOException e1) {
+//                e1.printStackTrace();
+//            }
         }
     }
 

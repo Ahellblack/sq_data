@@ -90,17 +90,18 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                     Integer sensorCode = entry.getKey();  // 记录传感器元素编号
                     String dataErrorCode = null;  // 记录异常错误编号
                     Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
-                    String descStr = "RTSQ：" + date + "," + sensorCode + "," + realvalue;
-
+                    String descStr = "RTSQ："+date+","+sensorCode+","+realvalue;
+                    String savedStr = "";  // 用来记录错误原因，后续写入数据库中
 
                     //---------------------------中断分析-------------------------
-                    if (!flag) {
+                    if(!flag){
                         if (vo == null) {  // MQ数据包数据不存在
                             dataErrorCode = DataError.BREAK_WINDSPEED.getErrorCode();
                             flag = true;
-                            descStr += "==>中断分析:数据发生中断！";
-                        } else {
-                            descStr += "==>中断分析:通过！";
+                            descStr +="==>中断分析:数据发生中断！";
+                            savedStr = "元素"+sensorCode+",数据发生中断！";
+                        }else{
+                            descStr +="==>中断分析:通过！";
                         }
                     }
 
@@ -119,6 +120,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                         dataErrorCode = one.get("error_code").toString();
                                         flag = true;
                                         descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
+                                        savedStr = "元素"+sensorCode+ ",出现典型值"+one.get("error_value") +"!";
                                         break;
                                     }
                                 }
@@ -137,48 +139,52 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                     }
 
                     //---------------------------极值分析-------------------------
-                    if (!flag) {
+                    if(!flag){
                         if (realvalue < config.getLevelMin()) {
                             dataErrorCode = DataError.LESS_WINDSPEED.getErrorCode();
                             flag = true;
-                            descStr += "==>极值分析:小于最小值:" + config.getLevelMin() + " !<" + realvalue + " <" + config.getLevelMax();
+                            descStr += "==>极值分析:小于最小值:"+config.getLevelMin()+" !<"+realvalue+" <"+config.getLevelMax();
+                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",小于最小值配置"+config.getLevelMin()+"!";
                         } else if (realvalue > config.getLevelMax()) {
                             dataErrorCode = DataError.MORE_WINDSPEED.getErrorCode();
                             flag = true;
-                            descStr += "==>极值分析得到:超过最大值:" + config.getLevelMin() + " <" + realvalue + " !<" + config.getLevelMax();
-                        } else {
+                            descStr += "==>极值分析得到:超过最大值:"+config.getLevelMin()+" <"+realvalue+" !<"+config.getLevelMax();
+                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",大于最大值配置"+config.getLevelMax()+"!";
+                        }else{
                             descStr += "==>极值分析得到:通过！";
                         }
                     }
 
                     //---------------------------变化率分析-------------------------
                     if (!flag) {
-                        if (null == config.getDownMax() || "".equals(config.getDownMax())) {
-                            descStr += "==>变化率分析:缺少配置，跳过变化率分析！";
-                        } else {
-                            String before = LocalDateUtil
+                        if(null == config.getUpMax() || null == config.getDownMax()){
+                            descStr +="==>变化率分析:缺少配置，跳过变化率分析！";
+                        }else{
+                            String before=LocalDateUtil
                                     .dateToLocalDateTime(realData.get(0).getTime()).minusMinutes(5)
                                     .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                            Real real = compareMap.get(before + "," + sensorCode);
+                            Real real = compareMap.get( before + "," + sensorCode );
                             if (real != null) {
-                                BigDecimal frant = BigDecimal.valueOf(real.getRealVal());
+                                BigDecimal frant = BigDecimal.valueOf( real.getRealVal() );
                                 BigDecimal end = BigDecimal.valueOf(realvalue);
-                                double result = end.subtract(frant).doubleValue();
+                                double result  = end.subtract(frant).doubleValue();
 
                                 if (result > config.getUpMax()) {
                                     dataErrorCode = DataError.UP_MAX_WINDSPEED.getErrorCode();
                                     flag = true;
-                                    descStr += "==>变化率分析:上升值超过最大值配置！" + end + " -" + frant + " =" + result + " >" + config.getUpMax();
-                                } else if (result < config.getDownMax()) {
+                                    descStr+="==>变化率分析:上升值超过最大值配置！"+end+" -"+frant+" ="+result+" >"+config.getUpMax();
+                                    savedStr = "元素"+sensorCode+",当前上升值" + result + ",超过最大上升值" + config.getUpMax()+"!";
+                                } else if(result < config.getDownMax()) {
                                     dataErrorCode = DataError.DOWN_MAX_WINDSPEED.getErrorCode();
                                     flag = true;
-                                    descStr += "==>变化率分析:下降值超过最大值配置！" + end + " -" + frant + " =" + result + " <" + config.getDownMax();
-                                } else {
+                                    descStr+="==>变化率分析:下降值超过最大值配置！"+end+" -"+frant+" ="+result+" <"+config.getDownMax();
+                                    savedStr = "元素"+sensorCode+",当前下降值" + result + ",超过最大下降值" + config.getDownMax()+"!";
+                                }else{
                                     descStr += "==>变化率分析:通过！";
                                 }
-                            } else {
+                            }else{
                                 //为了防止初次启动数据无法查询的问题
-                                descStr += "==>变化率分析:跳过分析！" + "时间为" + before + "的数据找不到！";
+                                descStr += "==>变化率分析:跳过分析！"+"时间为"+before+"的数据找不到！";
                             }
                         }
                     }
@@ -198,7 +204,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                             List<Real> realList = previousData.stream().filter(real -> real.getSensorCode() == sensorCode)
                                     .filter(real -> {
                                         try {
-                                            return sdf.parse(real.getTime()).after(sdf.parse(before));
+                                            return sdf.parse(real.getTime()).after(sdf.parse(before)) && sdf.parse(real.getTime()).before(sdf.parse(date));
                                         } catch (ParseException e) {
                                             e.printStackTrace();
                                         }
@@ -215,8 +221,9 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                 // 全部数据相等标志
                                 if (realList.stream().allMatch(element -> element.getRealVal().equals(realvalue))) {
                                     flag = true;
-                                    dataErrorCode = DataError.DOWN_MAX_WINDSPEED.getErrorCode();
+                                    dataErrorCode = DataError.DURING_WINDSPEED.getErrorCode();
                                     descStr += "==>过程线分析:过程线异常！" + realList.size()+"次数据相等，"+map;
+                                    savedStr = "元素"+sensorCode+",当前连续"+realList.size()+"次数据相等"+"!";
                                 } else {
                                     descStr += "==>过程线分析:过程线分析通过！";
                                 }
@@ -225,101 +232,113 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                     }  // 过程线分析结束
 
                     //---------------------------回归模型分析-------------------------
-                    if (!flag) {
+                    if(!flag){
                         List<RegressionEntity> regressionFunc = rlists.stream()
                                 .filter(object -> object.getSectionCode().equals(sensorCode))
                                 .collect(Collectors.toList());
 
                         if (regressionFunc.size() <= 0) {  // 回归模型不存在
-                            descStr += "==>回归模型分析:回归模型不存在，跳过分析！";
-                        } else {
-                            RegressionEntity regressionEntity = regressionFunc.get(0);
+                            descStr +="==>回归模型分析:回归模型不存在，跳过分析！";
+                        }
+                        else{
+                            RegressionEntity regressionEntity= regressionFunc.get(0);
                             Double arg0 = regressionEntity.getArg0();
                             Double arg1 = regressionEntity.getArg1();
                             Double redisualMax = regressionEntity.getAbResidualMax();
                             Integer sensorCode1 = regressionEntity.getRef1SectionCode();
-                            Double value1 = compareMap.get(date + "," + sensorCode1).getRealVal();
+                            Double value1 = compareMap.get( date + "," + sensorCode1 ).getRealVal();
 
-                            if (regressionEntity.getRefNum() == 1) {
-                                if (null == arg0 || null == redisualMax || null == arg1 || null == value1) {
-                                    descStr += "==>回归模型分析:回归模型参数不全，跳过分析！" + regressionEntity.toString();
-                                } else {
+                            if (regressionEntity.getRefNum() == 1){
+                                if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ){
+                                    descStr +="==>回归模型分析:回归模型参数不全，跳过分析！"+regressionEntity.toString();
+                                }
+                                else {
                                     Double predictValue = value1 * arg1 + arg0;
-                                    if (Math.abs(predictValue - realvalue) > redisualMax) {
+                                    if ( Math.abs(predictValue - realvalue) > redisualMax){
                                         flag = true;
-                                        descStr += "==>回归模型分析:残差过大，回归模型异常！" +
+                                        descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
-                                                redisualMax + " < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
-                                    } else {
-                                        descStr += ";回归模型分析得到==>残差正常，回归模型正常！" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
+                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                    }
+                                    else{
+                                        descStr +=";回归模型分析得到==>残差正常，回归模型正常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
-                                                redisualMax + " < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
                                     }
                                 }
-                            } else if (regressionEntity.getRefNum() == 2) {
+                            }
+                            else if (regressionEntity.getRefNum() == 2){
                                 Double arg2 = regressionEntity.getArg2();
                                 Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-                                Double value2 = compareMap.get(date + "," + sensorCode2).getRealVal();
+                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
 
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
-                                        null == arg2 || null == value2) {
-                                    descStr += ";回归模型分析得到==>回归模型参数不全，跳过分析！" + regressionEntity.toString();
-                                } else {
+                                        null == arg2 || null == value2 ){
+                                    descStr +=";回归模型分析得到==>回归模型参数不全，跳过分析！"+regressionEntity.toString();
+                                }
+                                else {
                                     Double predictValue = value1 * arg1 + value2 * arg2 + arg0;
-                                    if (Math.abs(predictValue - realvalue) > redisualMax) {
+                                    if (Math.abs(predictValue - realvalue) > redisualMax){
                                         flag = true;
-                                        descStr += "==>回归模型分析:残差过大，回归模型异常！" +
+                                        descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-                                                redisualMax + " < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
-                                    } else {
-                                        descStr += "==>回归模型分析:残差正常，回归模型正常！" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
+                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                    }
+                                    else{
+                                        descStr +="==>回归模型分析:残差正常，回归模型正常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-                                                redisualMax + " < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
                                     }
                                 }
-                            } else if (regressionEntity.getRefNum() == 3) {
+                            }
+                            else if (regressionEntity.getRefNum() == 3){
                                 Double arg2 = regressionEntity.getArg2();
                                 Double arg3 = regressionEntity.getArg3();
                                 Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-                                Double value2 = compareMap.get(date + "," + sensorCode2).getRealVal();
+                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
                                 Integer sensorCode3 = regressionEntity.getRef3SectionCode();
-                                Double value3 = compareMap.get(date + "," + sensorCode3).getRealVal();
+                                Double value3 = compareMap.get( date + "," + sensorCode3 ).getRealVal();
 
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
-                                        null == arg2 || null == value2 || null == arg3 || null == value3) {
-                                    descStr += "==>回归模型分析:回归模型参数不全，跳过分析！" + regressionEntity.toString();
-                                } else {
+                                        null == arg2 || null == value2 || null == arg3 || null == value3){
+                                    descStr +="==>回归模型分析:回归模型参数不全，跳过分析！"+regressionEntity.toString();
+                                }
+                                else {
                                     Double predictValue = arg0 + value1 * arg1 + value2 * arg2 + value3 * arg3;
-                                    if (Math.abs(predictValue - realvalue) > redisualMax) {
+                                    if (Math.abs(predictValue - realvalue) > redisualMax){
                                         flag = true;
-                                        descStr += "==>回归模型分析:残差过大，回归模型异常！" +
+                                        descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-                                                redisualMax + " < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
-                                    } else {
-                                        descStr += "==>回归模型分析:残差正常，回归模型正常！" +
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
+                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                    }
+                                    else{
+                                        descStr +="==>回归模型分析:残差正常，回归模型正常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
-                                                redisualMax + " < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
+                                                redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
                                     }
                                 }
-                            } else {
-                                descStr += "==>回归模型分析:回归模型参数不全，跳过分析！";
+                            }else{
+                                descStr +="==>回归模型分析:回归模型参数不全，跳过分析！";
                             }
 
-                            if (flag) {
+                            if (flag){
                                 dataErrorCode = DataError.REGRESSION_EXCEPTION_WINDSPEED.getErrorCode();
                             }
                         }
                     }  // 回归模型分析结束
 
                     logger.info(descStr);
-                    if (flag) {  // 出现异常才往异常表添加数据
-                        exceptionContainer[0].add(new AbnormalDetailEntity.builer()
+                    if(flag){  // 出现异常才往异常表添加数据
+                        exceptionContainer[0].add( new AbnormalDetailEntity.builer()
                                 .date(date)
-                                .sensorCode(sensorCode)
-                                .errorValue(realvalue)
+                                .sensorCode( sensorCode )
+                                .errorValue( realvalue )
                                 .dataError(dataErrorCode)
-                                .description(descStr)
-                                .build());
+                                .description(savedStr)
+                                .build() );
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -331,7 +350,6 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                 exceptionContainer[0] = null;
             }
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error("RealWindSpeedValve异常：{}", e.getMessage());
         }
     }

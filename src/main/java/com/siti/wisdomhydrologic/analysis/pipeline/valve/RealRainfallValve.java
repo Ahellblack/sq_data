@@ -90,6 +90,7 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                     String dataErrorCode = null;  // 记录异常错误编号
                     Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
                     String descStr = "RTSQ：" + date + "," + sensorCode + "," + realvalue;
+                    String savedStr = "";  // 用来记录错误原因，后续写入数据库中
 
 
                     // 雨量元素的数值为本次减前一次，需要过去前一次的值
@@ -104,6 +105,7 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                             dataErrorCode = DataError.BREAK_RainFall.getErrorCode();
                             flag = true;
                             descStr += "==>中断分析:数据发生中断！";
+                            savedStr = "元素"+sensorCode+",数据发生中断！";
                         } else {
                             descStr += "==>中断分析:通过！";
                         }
@@ -134,7 +136,8 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                                     if (Double.parseDouble(one.get("error_value").toString()) == vo.getFACTV()) {
                                         dataErrorCode = one.get("error_code").toString();
                                         flag = true;
-                                        descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
+                                        descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value")+"!";
+                                        savedStr = "元素"+sensorCode+ ",出现典型值"+one.get("error_value");
                                         break;
                                     }
                                 }
@@ -162,10 +165,12 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                                 dataErrorCode = DataError.LESS_RainFall.getErrorCode();
                                 flag = true;
                                 descStr += "==>极值分析:小于最小值:" + config.getMinFiveLevel() + " !<" + rainFallValue + " <" + config.getMaxFiveLevel();
+                                savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",小于最小值配置"+config.getMinFiveLevel()+"!";
                             } else if (rainFallValue > config.getMaxFiveLevel()) {
                                 dataErrorCode = DataError.MORE_RainFall.getErrorCode();
                                 flag = true;
                                 descStr += "==>极值分析得到:超过最大值:" + config.getMinFiveLevel() + " <" + rainFallValue + " !<" + config.getMaxFiveLevel();
+                                savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",大于最大值配置"+config.getMaxFiveLevel()+"!";
                             } else {
                                 descStr += "==>极值分析得到:通过！";
                             }
@@ -206,46 +211,98 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                                 boolean allMoreThanZeroFlag = refValue.stream().allMatch(element -> element >0);
                                 boolean allEqualZeroFlag = refValue.stream().allMatch(element -> element == 0);
 
-                                if (allEqualZeroFlag && realvalue == 0){
-                                    descStr += "==>邻近测站分析:通过！";
-                                }
-                                else if (allMoreThanZeroFlag && realvalue == 0){
-                                    // 周围元素数值均大于0, 自身为0
-                                    flag = true;
-                                    dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
-                                    descStr += "==>邻近测站分析:异常！本身无雨，周围有雨！";
-                                }
-                                else if (allEqualZeroFlag && realvalue > 0){
-                                    // 周围元素数值均为0, 自身不为0
-                                    flag = true;
-                                    dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
-                                    descStr += "==>邻近测站分析:异常！本身有雨，周围无雨！";
-                                }
-                                else{
-                                    // 周围和本身都不为0
-                                    double avgValue = validSumValue / validNum;
-                                    double diff = realvalue - avgValue;
+                                if(realvalue == 0){  // 自身为0时的分析
+                                    if (allMoreThanZeroFlag){
+                                        // 周围元素数值均大于0, 自身为0
+                                        flag = true;
+                                        dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
+                                        descStr += "==>邻近测站分析:异常！本身无雨，周围有雨！";
+                                        savedStr = "元素"+sensorCode+",本身无雨，周围有雨！";
+                                    } else {
+                                        descStr += "==>邻近测站分析:通过！";
+                                    }
+                                } else {// 自身不为0时的分析
+                                    if (allEqualZeroFlag){
+                                        // 周围元素数值均为0, 自身不为0
+                                        flag = true;
+                                        dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
+                                        descStr += "==>邻近测站分析:异常！本身有雨，周围无雨！";
+                                        savedStr = "元素"+sensorCode+",本身有雨，周围无雨！";
+                                    }
+                                    else if(allMoreThanZeroFlag){
+                                        // 周围元素数值均不为0, 自身不为0
+                                        double avgValue = validSumValue / validNum;
+                                        double diff = realvalue - avgValue;
 
-                                    if (diff == 0) {
-                                        descStr += "==>邻近测站分析:分析通过！";
-                                    } else if (diff < 0) {
-                                        if (Math.abs(diff) / avgValue > config.getNearbyRate()) {
-                                            flag = true;
-                                            dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
-                                            descStr += "==>邻近测站分析:低于周围均值" + config.getNearbyRate() + "！";
-                                        } else {
+                                        if (diff == 0) {
                                             descStr += "==>邻近测站分析:分析通过！";
-                                        }
-                                    } else { // diff > 0
-                                        if (diff / avgValue > config.getNearbyRate()) {
-                                            flag = true;
-                                            dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
-                                            descStr += "==>邻近测站分析:高于周围均值" + config.getNearbyRate() + "！";
-                                        } else {
-                                            descStr += "==>邻近测站分析:分析通过！";
+                                        } else if (diff < 0) {
+                                            if (Math.abs(diff) / avgValue > config.getNearbyRate()) {
+                                                flag = true;
+                                                dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
+                                                descStr += "==>邻近测站分析:低于周围均值" + config.getNearbyRate() + "！";
+                                                savedStr = "元素"+sensorCode+",本身雨量 "+realvalue+",低于周围雨量 "+avgValue + "超过" +config.getNearbyRate()+"!";
+                                            } else {
+                                                descStr += "==>邻近测站分析:分析通过！";
+                                            }
+                                        } else { // diff > 0
+                                            if (diff / avgValue > config.getNearbyRate()) {
+                                                flag = true;
+                                                dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
+                                                descStr += "==>邻近测站分析:高于周围均值" + config.getNearbyRate() + "！";
+                                                savedStr = "元素"+sensorCode+",本身雨量 "+realvalue+",高于周围雨量 "+avgValue + "超过" +config.getNearbyRate()+"!";
+                                            } else {
+                                                descStr += "==>邻近测站分析:分析通过！";
+                                            }
                                         }
                                     }
+                                    else{
+                                        // 自身不为0，周围存在0和非0
+                                        descStr += "==>邻近测站分析:通过！";
+                                    }
                                 }
+//
+//
+//                                if (allEqualZeroFlag && realvalue == 0){
+//                                    descStr += "==>邻近测站分析:通过！";
+//                                }
+//                                else if (allMoreThanZeroFlag && realvalue == 0){
+//                                    // 周围元素数值均大于0, 自身为0
+//                                    flag = true;
+//                                    dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
+//                                    descStr += "==>邻近测站分析:异常！本身无雨，周围有雨！";
+//                                }
+//                                else if (allEqualZeroFlag && realvalue > 0){
+//                                    // 周围元素数值均为0, 自身不为0
+//                                    flag = true;
+//                                    dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
+//                                    descStr += "==>邻近测站分析:异常！本身有雨，周围无雨！";
+//                                }
+//                                else{
+//                                    // 周围和本身都不为0
+//                                    double avgValue = validSumValue / validNum;
+//                                    double diff = realvalue - avgValue;
+//
+//                                    if (diff == 0) {
+//                                        descStr += "==>邻近测站分析:分析通过！";
+//                                    } else if (diff < 0) {
+//                                        if (Math.abs(diff) / avgValue > config.getNearbyRate()) {
+//                                            flag = true;
+//                                            dataErrorCode = DataError.LESSNEAR_RainFall.getErrorCode();
+//                                            descStr += "==>邻近测站分析:低于周围均值" + config.getNearbyRate() + "！";
+//                                        } else {
+//                                            descStr += "==>邻近测站分析:分析通过！";
+//                                        }
+//                                    } else { // diff > 0
+//                                        if (diff / avgValue > config.getNearbyRate()) {
+//                                            flag = true;
+//                                            dataErrorCode = DataError.MORENEAR_RainFall.getErrorCode();
+//                                            descStr += "==>邻近测站分析:高于周围均值" + config.getNearbyRate() + "！";
+//                                        } else {
+//                                            descStr += "==>邻近测站分析:分析通过！";
+//                                        }
+//                                    }
+//                                }
 
                             } else {
                                 descStr += "==>邻近测站分析:缺失依赖过多,跳过分析!";
@@ -262,8 +319,7 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                                 .sensorCode(sensorCode)
                                 .errorValue(realvalue)
                                 .dataError(dataErrorCode)
-                                .description(descStr)
-                                .description(descStr)
+                                .description(savedStr)
                                 .build());
                     }
                 } catch (NumberFormatException e) {
@@ -276,7 +332,6 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
                 exceptionContainer[0] = null;
             }
         } catch (Exception e) {
-            e.printStackTrace();
             logger.error("RealRainfallValve异常：{}", e.getMessage());
         }
     }
