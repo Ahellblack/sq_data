@@ -3,24 +3,36 @@ spring:
     driver-class-name: com.mysql.jdbc.Driver
     username: root
     password: root
-    url: jdbc:mysql://10.1.30.205:3306/wisdomhydrologic?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
+    url: jdbc:mysql://10.1.30.205:3306/wh?useUnicode=true&characterEncoding=utf8&useSSL=true&allowMultiQueries=true
 #rabbitmq相关配置
   rabbitmq:
-     host: 10.1.4.108 #10.1.30.24
-     port: 5672
-     username: wh
-     password: wh@siti
-     publisher-confirms: true
-     publisher-returns: true
-     listener:
-        simple:
-          acknowledge-mode: manual #采用手动应答
-          concurrency: 1
-          max-concurrency: 1
-          retry:
-            enabled: false #是否支持重试
-          prefetch: 1
-     virtual-host: /
+     first:
+        host: 114.80.231.178 #10.1.30.24
+        port: 5671
+        username: shuiwen
+        password: siti@sw
+        publisher-confirms: true
+        publisher-returns: true
+        virtual-host: shuiwen
+        listener:
+           simple:
+             acknowledge-mode: manual #采用手动应答
+             concurrency: 2
+             max-concurrency: 2
+             retry:
+               enabled: true #是否支持重试
+             prefetch: 1
+     second:
+       host: 114.80.231.178 #10.1.30.24
+       port: 5671
+       username: sq_dev
+       password: 123456
+       publisher-confirms: true
+       publisher-returns: true
+       virtual-host: sq_dev
+
+  devstatusquene: quene-test
+
 
 logback:
   logHome: C:/sq_data/log/

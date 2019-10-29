@@ -7,6 +7,8 @@ import com.siti.wisdomhydrologic.config.ColorsExecutor;
 import com.siti.wisdomhydrologic.config.RabbitMQConfig;
 import com.siti.wisdomhydrologic.analysis.mapper.*;
 import com.siti.wisdomhydrologic.analysis.vo.RealVo;
+import com.siti.wisdomhydrologic.util.DateTransform;
+import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -14,10 +16,12 @@ import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
@@ -34,6 +38,8 @@ import java.util.stream.IntStream;
 @Transactional
 public class RealListener {
 
+    private final String TABLENAME = "history_real_sensor_data_";
+
     @Resource
     RealMapper realMapper;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
@@ -45,8 +51,7 @@ public class RealListener {
     @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL, containerFactory = "firstRabbitListenerConnectionFactory")
     @RabbitHandler
     public void realProcess(List<RealVo> realVos, Channel channel, Message message) {
-        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                .format(new Date())+"线程ID:"+Thread.currentThread().getId()+realVos.get(0).toString());
+        logger.info(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + "线程ID:" + Thread.currentThread().getId() + realVos.get(0).toString());
         try {
             if (realVos.size() > 0) {
                 calPackage(realVos);
@@ -56,7 +61,7 @@ public class RealListener {
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
-        }finally {
+        } finally {
 //            //----------------------后面可以优化---------------------
 //            try {
 //                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
@@ -75,7 +80,7 @@ public class RealListener {
         splitList(RealVoList, 1000);
         //-------------------------触发一次-----------------------
         if (flag.compareAndSet(false, true)) {
-            PipelineValve finalValvo=new PipelineValve();
+            PipelineValve finalValvo = new PipelineValve();
             finalValvo.setHandler(new RealWaterlevelValve());
             finalValvo.setHandler(new RealTidelValve());
             finalValvo.setHandler(new RealWindSpeedValve());
@@ -105,8 +110,7 @@ public class RealListener {
         }
         //----------------------------往容器中放入信息（会阻塞）-----------------
         receiver.put(RealVoList);
-        logger.info("real_queue消费者获取day数据...总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(),
-                currentbatch, sumSize.get(), currentsize, vo.getStatus());
+        logger.info("real_queue消费者获取day数据...总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(), currentbatch, sumSize.get(), currentsize, vo.getStatus());
     }
 
     /**
@@ -133,15 +137,45 @@ public class RealListener {
             }
         }
     }
+
     //--------------------入库-------------------
-    public boolean splitList(List arrayList, int size) {
+    public boolean splitList(List<RealVo> arrayList, int size) {
         try {
             int all = arrayList.size();
             int cycle = all % size == 0 ? all / size : (all / size + 1);
             IntStream.range(0, cycle).forEach(e -> {
+                //判断数据归属于哪一个月
+
+                String date = DateTransform.Date2String(arrayList.get(0).getTime(), "yyyyMM");
+
+                String realtime = DateTransform.Date2String(arrayList.get(0).getTime(), "yyyy-MM-dd HH:mm:ss");
+                String table = TABLENAME + date;
+
+                /**
+                 * 生成并插入历史表
+                 * */
+                realMapper.buildTable(table);
+                realMapper.insertHistroy(arrayList.subList(e * size, (e + 1) * size > all ? all : size * (e + 1)), table);
+
+                /**
+                 * 更新实时表数据,更新一周内数据
+                 * */
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(DateTransform.String2Date(realtime, "yyyy-MM-dd HH:mm:ss"));
+                cal.add(Calendar.DAY_OF_MONTH, -7);
+                String oldWeekTime = DateTransform.Date2String(cal.getTime(), "yyyy-MM-dd HH:mm:ss");
+                /**
+                 * 删除7天前的数据
+                 * */
+                realMapper.deleteOldTime(oldWeekTime);
+                /**
+                 * 插入实时数据
+                 * */
                 realMapper.insertReal(arrayList.subList(e * size, (e + 1) * size > all ? all : size * (e + 1)));
+
+                System.out.println();
             });
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
         return true;
