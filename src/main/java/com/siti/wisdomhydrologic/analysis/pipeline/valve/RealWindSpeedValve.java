@@ -99,7 +99,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                             dataErrorCode = DataError.BREAK_WINDSPEED.getErrorCode();
                             flag = true;
                             descStr +="==>中断分析:数据发生中断！";
-                            savedStr = "元素"+sensorCode+",数据发生中断！";
+                            savedStr = "数据发生中断！";
                         }else{
                             descStr +="==>中断分析:通过！";
                         }
@@ -120,7 +120,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                         dataErrorCode = one.get("error_code").toString();
                                         flag = true;
                                         descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
-                                        savedStr = "元素"+sensorCode+ ",出现典型值"+one.get("error_value") +"!";
+                                        savedStr = "出现典型值"+one.get("error_value") +"!";
                                         break;
                                     }
                                 }
@@ -144,12 +144,12 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                             dataErrorCode = DataError.LESS_WINDSPEED.getErrorCode();
                             flag = true;
                             descStr += "==>极值分析:小于最小值:"+config.getLevelMin()+" !<"+realvalue+" <"+config.getLevelMax();
-                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",小于最小值配置"+config.getLevelMin()+"!";
+                            savedStr = "当前数值"+realvalue +",小于最小值配置"+config.getLevelMin()+"!";
                         } else if (realvalue > config.getLevelMax()) {
                             dataErrorCode = DataError.MORE_WINDSPEED.getErrorCode();
                             flag = true;
                             descStr += "==>极值分析得到:超过最大值:"+config.getLevelMin()+" <"+realvalue+" !<"+config.getLevelMax();
-                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",大于最大值配置"+config.getLevelMax()+"!";
+                            savedStr = "当前数值"+realvalue +",大于最大值配置"+config.getLevelMax()+"!";
                         }else{
                             descStr += "==>极值分析得到:通过！";
                         }
@@ -173,12 +173,12 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                     dataErrorCode = DataError.UP_MAX_WINDSPEED.getErrorCode();
                                     flag = true;
                                     descStr+="==>变化率分析:上升值超过最大值配置！"+end+" -"+frant+" ="+result+" >"+config.getUpMax();
-                                    savedStr = "元素"+sensorCode+",当前上升值" + result + ",超过最大上升值" + config.getUpMax()+"!";
+                                    savedStr = "当前上升值" + result + ",超过最大上升值" + config.getUpMax()+"!";
                                 } else if(result < config.getDownMax()) {
                                     dataErrorCode = DataError.DOWN_MAX_WINDSPEED.getErrorCode();
                                     flag = true;
                                     descStr+="==>变化率分析:下降值超过最大值配置！"+end+" -"+frant+" ="+result+" <"+config.getDownMax();
-                                    savedStr = "元素"+sensorCode+",当前下降值" + result + ",超过最大下降值" + config.getDownMax()+"!";
+                                    savedStr = "当前下降值" + result + ",超过最大下降值" + config.getDownMax()+"!";
                                 }else{
                                     descStr += "==>变化率分析:通过！";
                                 }
@@ -223,7 +223,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                     flag = true;
                                     dataErrorCode = DataError.DURING_WINDSPEED.getErrorCode();
                                     descStr += "==>过程线分析:过程线异常！" + realList.size()+"次数据相等，"+map;
-                                    savedStr = "元素"+sensorCode+",当前连续"+realList.size()+"次数据相等"+"!";
+                                    savedStr = "当前连续"+realList.size()+"次数据相等"+"!";
                                 } else {
                                     descStr += "==>过程线分析:过程线分析通过！";
                                 }
@@ -259,7 +259,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
-                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                        savedStr = "回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +=";回归模型分析得到==>残差正常，回归模型正常！"+
@@ -284,7 +284,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2;
-                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                        savedStr = "回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +="==>回归模型分析:残差正常，回归模型正常！"+
@@ -312,7 +312,7 @@ public class RealWindSpeedValve implements Valve<RealVo, Real, WSEntity>, Applic
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
-                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                        savedStr = "回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +="==>回归模型分析:残差正常，回归模型正常！"+

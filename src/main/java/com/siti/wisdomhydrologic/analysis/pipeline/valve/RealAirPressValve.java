@@ -101,7 +101,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             dataErrorCode = DataError.BREAK_AirPress.getErrorCode();
                             flag = true;
                             descStr +="==>中断分析:数据发生中断！";
-                            savedStr = "元素"+sensorCode+",数据发生中断！";
+                            savedStr = "数据发生中断！";
                         }else{
                             descStr +="==>中断分析:通过！";
                         }
@@ -122,7 +122,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                         dataErrorCode = one.get("error_code").toString();
                                         flag = true;
                                         descStr += "==>典型值分析:异常类型：" + dataErrorCode + "典型值配置：" + one.get("error_value");
-                                        savedStr = "元素"+sensorCode+ ",出现典型值"+one.get("error_value") +"!";
+                                        savedStr ="出现典型值"+one.get("error_value") +"!";
                                         break;
                                     }
                                 }
@@ -146,12 +146,12 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             dataErrorCode = DataError.LESS_AirPress.getErrorCode();
                             flag = true;
                             descStr += "==>极值分析:小于最小值:"+config.getLevelMin()+" !<"+realvalue+" <"+config.getLevelMax();
-                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",小于最小值配置"+config.getLevelMin()+"!";
+                            savedStr =  "当前数值"+realvalue +",小于最小值配置"+config.getLevelMin()+"!";
                         } else if (realvalue > config.getLevelMax()) {
                             dataErrorCode = DataError.MORE_AirPress.getErrorCode();
                             flag = true;
                             descStr += "==>极值分析得到:超过最大值:"+config.getLevelMin()+" <"+realvalue+" !<"+config.getLevelMax();
-                            savedStr = "元素"+sensorCode+ ",当前数值"+realvalue +",大于最大值配置"+config.getLevelMax()+"!";
+                            savedStr = "当前数值"+realvalue +",大于最大值配置"+config.getLevelMax()+"!";
                         }else{
                             descStr += "==>极值分析得到:通过！";
                         }
@@ -175,12 +175,12 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                     dataErrorCode = DataError.UP_MAX_AirPress.getErrorCode();
                                     flag = true;
                                     descStr+="==>变化率分析:上升值超过最大值配置！"+end+" -"+frant+" ="+result+" >"+config.getUpMax();
-                                    savedStr = "元素"+sensorCode+",当前上升值" + result + ",超过最大上升值" + config.getUpMax()+"!";
+                                    savedStr = "当前上升值" + result + ",超过最大上升值" + config.getUpMax()+"!";
                                 } else if(result < config.getDownMax()) {
                                     dataErrorCode = DataError.DOWN_MAX_AirPress.getErrorCode();
                                     flag = true;
                                     descStr+="==>变化率分析:下降值超过最大值配置！"+end+" -"+frant+" ="+result+" <"+config.getDownMax();
-                                    savedStr = "元素"+sensorCode+",当前下降值" + result + ",超过最大下降值" + config.getDownMax()+"!";
+                                    savedStr = "当前下降值" + result + ",超过最大下降值" + config.getDownMax()+"!";
                                 }else{
                                     descStr += "==>变化率分析:通过！";
                                 }
@@ -225,7 +225,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                     flag = true;
                                     dataErrorCode = DataError.DURING_AirPress.getErrorCode();
                                     descStr += "==>过程线分析:过程线异常！" + realList.size()+"次数据相等，"+map;
-                                    savedStr = "元素"+sensorCode+",当前连续"+realList.size()+"次数据相等"+"!";
+                                    savedStr = "当前连续"+realList.size()+"次数据相等"+"!";
                                 } else {
                                     descStr += "==>过程线分析:过程线分析通过！";
                                 }
