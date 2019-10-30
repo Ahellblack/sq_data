@@ -43,61 +43,61 @@ public class RabbitMQConfig {
     public static final String QUEUE_HOUR = "wh_hour";
 
     public static final String QUEUE_TSDB = "wh_tsdb";
-
-    /**
-     * 针对消费者配置
-     * 1. 设置交换机类型
-     * 2. 将队列绑定到交换机
-     FanoutExchange: 将消息分发到所有的绑定队列，无routingkey的概念
-     HeadersExchange ：通过添加属性key-value匹配
-     DirectExchange:按照routingkey分发到指定队列
-     TopicExchange:多关键字匹配
-     */
-    @Bean
-    public DirectExchange defaultExchange() {
-        return new DirectExchange(WH_EXCHANGE,true,false);
-    }
-
-    @Bean
-    public Queue queuReal() {
-        return new Queue(QUEUE_REAL, true); //队列持久
-    }
-
-    @Bean
-    public Queue queueTSDB() {
-        return new Queue(QUEUE_TSDB, true); //队列持久
-    }
-
-    @Bean
-    public Queue queueHour() {
-        return new Queue(QUEUE_HOUR, true); //队列持久
-    }
-
-    @Bean
-    public Queue queueDay()
-    {
-        return new Queue(QUEUE_DAY, true); //队列持久
-    }
-
-    @Bean
-    public Binding bindingReal() {
-        return BindingBuilder.bind(queuReal()).to(defaultExchange()).with(RabbitMQConfig.WH_EXCHANGE);
-    }
-
-    @Bean
-    public Binding bindingDay() {
-        return BindingBuilder.bind(queueDay()).to(defaultExchange()).with(RabbitMQConfig.WH_EXCHANGE);
-    }
-
-    @Bean
-    public Binding bindingTSDB() {
-        return BindingBuilder.bind(queueTSDB()).to(defaultExchange()).with(RabbitMQConfig.WH_EXCHANGE);
-    }
-
-    @Bean
-    public Binding bindingHour() {
-        return BindingBuilder.bind(queueHour()).to(defaultExchange()).with(RabbitMQConfig.WH_EXCHANGE);
-    }
+//
+//    /**
+//     * 针对消费者配置
+//     * 1. 设置交换机类型
+//     * 2. 将队列绑定到交换机
+//     FanoutExchange: 将消息分发到所有的绑定队列，无routingkey的概念
+//     HeadersExchange ：通过添加属性key-value匹配
+//     DirectExchange:按照routingkey分发到指定队列
+//     TopicExchange:多关键字匹配
+//     */
+//    @Bean
+//    public DirectExchange defaultExchange() {
+//        return new DirectExchange(WH_EXCHANGE,true,false);
+//    }
+//
+//    @Bean
+//    public Queue queuReal() {
+//        return new Queue(QUEUE_REAL, true); //队列持久
+//    }
+//
+//    @Bean
+//    public Queue queueTSDB() {
+//        return new Queue(QUEUE_TSDB, true); //队列持久
+//    }
+//
+//    @Bean
+//    public Queue queueHour() {
+//        return new Queue(QUEUE_HOUR, true); //队列持久
+//    }
+//
+//    @Bean
+//    public Queue queueDay()
+//    {
+//        return new Queue(QUEUE_DAY, true); //队列持久
+//    }
+//
+//    @Bean
+//    public Binding bindingReal() {
+//        return BindingBuilder.bind(queuReal()).to(defaultExchange()).with(RabbitMQConfig.QUEUE_REAL);
+//    }
+//
+//    @Bean
+//    public Binding bindingDay() {
+//        return BindingBuilder.bind(queueDay()).to(defaultExchange()).with(RabbitMQConfig.QUEUE_DAY);
+//    }
+//
+//    @Bean
+//    public Binding bindingTSDB() {
+//        return BindingBuilder.bind(queueTSDB()).to(defaultExchange()).with(RabbitMQConfig.QUEUE_TSDB);
+//    }
+//
+//    @Bean
+//    public Binding bindingHour() {
+//        return BindingBuilder.bind(queueHour()).to(defaultExchange()).with(RabbitMQConfig.QUEUE_HOUR);
+//    }
 
     @Primary
     @Bean(name="firstConnectionFactory")
