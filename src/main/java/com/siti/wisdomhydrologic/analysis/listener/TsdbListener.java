@@ -128,7 +128,7 @@ public class TsdbListener {
             }
         };
         while (true) {
-            if (es.getQueue().size() < 4) {
+            if (es.getQueue().size() < 5) {
                 es.execute(fetchTask);
             }
             if (receiver.isEmpty()) {

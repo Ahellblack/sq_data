@@ -42,6 +42,7 @@ public  class RealAirTemperatureValve implements Valve<RealVo,Real,ATEntity>,App
 
     @Override
     public void beforeProcess(List <RealVo> realData) {
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"进入气温分析!");
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
 
         //-------------------一天内的数据-----------------

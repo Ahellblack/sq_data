@@ -1,5 +1,8 @@
 package com.siti.wisdomhydrologic.util;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -98,17 +101,33 @@ public class DatesUtils {
 
     public static void main(String[] args) throws ParseException {
 
-        SimpleDateFormat dateformat = new SimpleDateFormat("YYYY-MM");
-        String sdate = "2002-06";
-        String edate = dateformat.format(new Date());
-        System.out.println(sdate+"////"+edate);
-        Date dS = dateformat.parse(sdate);
-        Date dE = dateformat.parse(edate);
-        System.out.println(dS+"////"+dE);
+//        SimpleDateFormat dateformat = new SimpleDateFormat("YYYY-MM");
+//        String sdate = "2002-06";
+//        String edate = dateformat.format(new Date());
+//        System.out.println(sdate+"////"+edate);
+//        Date dS = dateformat.parse(sdate);
+//        Date dE = dateformat.parse(edate);
+//        System.out.println(dS+"////"+dE);
+//
+//        System.out.println(findMonthDates(sdate,edate));
 
-        System.out.println(findMonthDates(sdate,edate));
+        JSONArray list = new JSONArray();
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("table4_rows",2);
+        jsonObject.put("table5_rows",2);
+        list.add(jsonObject);
+
+        JSONObject jsonObject2 = new JSONObject();
+        jsonObject2.put("table4_rows",3);
+        jsonObject2.put("table5_rows",3);
+        list.add(jsonObject2);
+
+        JSONObject jsonObject1 = new JSONObject();
+        jsonObject1.put("table4_rows",1);
+        jsonObject1.put("table5_rows",1);
+        list.add(jsonObject1);
+        System.out.println(list.toJSONString());
+        System.out.println(list.get(0).toString());
+        System.out.println(list.get(1).toString());
     }
-
-
-
 }

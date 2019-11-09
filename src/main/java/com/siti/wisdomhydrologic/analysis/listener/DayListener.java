@@ -115,7 +115,7 @@ public class DayListener {
             }
         };
         while (true) {
-            if (es.getQueue().size() < 3) {
+            if (es.getQueue().size() < 5) {
                 es.execute(fetchTask);
             }
             if (receiver.isEmpty()) {

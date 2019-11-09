@@ -42,10 +42,11 @@ public class RealRainfallValve implements Valve<RealVo, Real, RainfallEntity>, A
 
     @Override
     public void beforeProcess(List<RealVo> realData) {
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"进入雨量分析!");
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
         //-------------------3小时内的数据-----------------
         String before = LocalDateUtil
-                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
+                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(6)
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before, ConstantConfig.RS);
         //------------获取雨量配置表--------------

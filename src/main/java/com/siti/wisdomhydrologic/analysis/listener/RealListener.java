@@ -123,14 +123,19 @@ public class RealListener {
         Runnable fetchTask = () -> {
             List<RealVo> voList = receiver.poll();
             if (voList != null) {
+                logger.info("voList is not empty, in doInterceptor！");
                 finalValvo.doInterceptor(voList);
+            }
+            else{
+                logger.info("voList is empty！");
             }
         };
         while (true) {
-            if (es.getQueue().size() < 3) {
+            if (es.getQueue().size() < 5) {
                 es.execute(fetchTask);
             }
             if (receiver.isEmpty()) {
+                logger.info("receiver is empty，es shutdown！");
                 es.shutdown();
                 flag.compareAndSet(true, false);
                 break;
@@ -172,8 +177,6 @@ public class RealListener {
                  * 插入实时数据
                  * */
                 realMapper.insertReal(arrayList.subList(e * size, (e + 1) * size > all ? all : size * (e + 1)));
-
-                System.out.println();
             });
         } catch (Exception e) {
             return false;

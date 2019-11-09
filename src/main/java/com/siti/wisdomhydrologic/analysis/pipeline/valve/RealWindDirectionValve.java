@@ -41,6 +41,7 @@ public class RealWindDirectionValve implements Valve<RealVo, Real, WDEntity>, Ap
 
     @Override
     public void beforeProcess(List<RealVo> realData) {
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"进入风向分析!");
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
 
         //-------------------一天内的数据-----------------

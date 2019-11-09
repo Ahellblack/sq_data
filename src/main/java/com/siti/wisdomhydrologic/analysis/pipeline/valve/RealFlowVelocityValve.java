@@ -43,6 +43,7 @@ public class RealFlowVelocityValve implements Valve<RealVo, Real, FVEntity>, App
 
     @Override
     public void beforeProcess(List<RealVo> realData) {
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"进入流速分析!");
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
 
         //-------------------3小时内的数据-----------------

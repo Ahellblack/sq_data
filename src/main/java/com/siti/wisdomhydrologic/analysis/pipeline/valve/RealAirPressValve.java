@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -42,6 +43,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
 
     @Override
     public void beforeProcess(List <RealVo> realData) {
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"进入气压分析!");
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
         //------------------读取real过去一段时间数据-----------------
         String before=LocalDateUtil

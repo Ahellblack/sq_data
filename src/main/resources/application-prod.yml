@@ -36,7 +36,7 @@ spring:
 
 
 logback:
-  logHome: /sq_data/log/
+  logHome: F:\PATH\shuiqing jar\sq_data\log\
   logName: sq
 
 

@@ -42,10 +42,11 @@ public class RealWaterlevelValve implements Valve<RealVo, Real, WaterLevelEntity
 
     @Override
     public void beforeProcess(List<RealVo> realData) {
+        logger.info( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"进入水位分析!");
         abnormalDetailMapper = getBean(AbnormalDetailMapper.class);
         //------------------读取real过去一段时间数据-----------------
         String before = LocalDateUtil
-                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(3)
+                .dateToLocalDateTime(realData.get(0).getTime()).minusHours(6)
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         List<Real> previousData = abnormalDetailMapper.selectBeforeFiveReal(before, ConstantConfig.WS);
         //----------------------获取配置表---------------------------
