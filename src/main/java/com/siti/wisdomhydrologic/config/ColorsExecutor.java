@@ -29,10 +29,10 @@ public class ColorsExecutor {
     public ThreadPoolExecutor init() {
         pool = new ThreadPoolExecutor(
                 1,
-                5,
+                8,
                 30,
                 TimeUnit.MINUTES,
-                new ArrayBlockingQueue<Runnable>(5),
+                new ArrayBlockingQueue<Runnable>(20),
                 new ColorThreadFactory(),
                 new ColorExecutionHandler());
         return pool;

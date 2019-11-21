@@ -135,7 +135,7 @@ public class HourListener {
             }
         };
         while (true) {
-            if (es.getQueue().size() < 5) {
+            if (es.getQueue().size() < 20) {
                 es.execute(fetchTask);
             }
             if (receiver.isEmpty()) {
