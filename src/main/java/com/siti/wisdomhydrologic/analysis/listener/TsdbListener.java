@@ -108,6 +108,7 @@ public class TsdbListener {
                 logger.info("tsdb消息成功消费完成无丢包！");
             }
         }
+        logger.info("List size="+List.size());
         receiver.put(List);
         splitList(List, 500);
         logger.info("tsdb_queue消费者获取数据...总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(),

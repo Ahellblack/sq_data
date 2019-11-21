@@ -93,6 +93,7 @@ public class DayListener {
                 logger.info(" Day success end ");
             }
         }
+        logger.info("List size="+List.size());
         receiver.put(List);
         logger.info("Day消费者----总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(),
                 currentbatch, sumSize.get(), currentsize, vo.getStatus());

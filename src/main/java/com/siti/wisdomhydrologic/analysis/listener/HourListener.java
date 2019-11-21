@@ -103,6 +103,7 @@ public class HourListener {
                 logger.info("hour消息成功消费完成无丢包！");
             }
         }
+        logger.info("List size="+List.size());
         receiver.put(List);
         logger.info("Hour消费者----总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(),
                 currentbatch, sumSize.get(), currentsize, vo.getStatus());
