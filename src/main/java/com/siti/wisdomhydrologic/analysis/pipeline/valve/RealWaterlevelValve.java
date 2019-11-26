@@ -249,7 +249,8 @@ public class RealWaterlevelValve implements Valve<RealVo, Real, WaterLevelEntity
                             Double arg1 = regressionEntity.getArg1();
                             Double redisualMax = regressionEntity.getAbResidualMax();
                             Integer sensorCode1 = regressionEntity.getRef1SectionCode();
-                            Double value1 = compareMap.get( date + "," + sensorCode1 ).getRealVal();
+                            Real refReal1 = compareMap.get( date + "," + sensorCode1 );
+                            Double value1 = refReal1 == null ? null : refReal1.getRealVal();
 
                             if (regressionEntity.getRefNum() == 1){
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ){
@@ -274,7 +275,8 @@ public class RealWaterlevelValve implements Valve<RealVo, Real, WaterLevelEntity
                             else if (regressionEntity.getRefNum() == 2){
                                 Double arg2 = regressionEntity.getArg2();
                                 Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
+                                Real refReal2 = compareMap.get( date + "," + sensorCode2 );
+                                Double value2 = refReal2 == null ? null : refReal2.getRealVal();
 
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
                                         null == arg2 || null == value2 ){
@@ -300,9 +302,12 @@ public class RealWaterlevelValve implements Valve<RealVo, Real, WaterLevelEntity
                                 Double arg2 = regressionEntity.getArg2();
                                 Double arg3 = regressionEntity.getArg3();
                                 Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
                                 Integer sensorCode3 = regressionEntity.getRef3SectionCode();
-                                Double value3 = compareMap.get( date + "," + sensorCode3 ).getRealVal();
+
+                                Real refReal2 = compareMap.get( date + "," + sensorCode2 );
+                                Real refReal3 = compareMap.get( date + "," + sensorCode3 );
+                                Double value2 = refReal2 == null ? null : refReal2.getRealVal();
+                                Double value3 = refReal3 == null ? null : refReal3.getRealVal();
 
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
                                         null == arg2 || null == value2 || null == arg3 || null == value3){

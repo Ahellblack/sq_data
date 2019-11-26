@@ -62,7 +62,7 @@ public class RealListener {
         } catch (Exception e) {
             logger.error(e.getMessage());
         } finally {
-//            //----------------------后面可以优化---------------------
+            //----------------------后面可以优化---------------------
 //            try {
 //                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
 //            } catch (IOException e1) {
@@ -117,6 +117,7 @@ public class RealListener {
     /**
      * 触发消费任务
      */
+
     private void multiProcess(PipelineValve finalValvo) {
         ColorsExecutor colors = new ColorsExecutor();
         colors.init();
@@ -126,23 +127,52 @@ public class RealListener {
             if (voList != null) {
                 logger.info("voList is not empty, in doInterceptor！");
                 finalValvo.doInterceptor(voList);
-            }
-            else{
+            }else{
                 logger.info("voList is empty！");
             }
         };
         while (true) {
-            if (es.getQueue().size() < 20) {
-                es.execute(fetchTask);
+            es.execute(fetchTask);
+            if(es.getQueue().size()==20){
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            if (receiver.isEmpty()) {
+            if (receiver.isEmpty()&&es.getQueue().size()<1) {
                 logger.info("receiver is empty，es shutdown！");
-                es.shutdown();
                 flag.compareAndSet(true, false);
                 break;
             }
         }
     }
+//    private void multiProcess(PipelineValve finalValvo) {
+//        ColorsExecutor colors = new ColorsExecutor();
+//        colors.init();
+//        ThreadPoolExecutor es = colors.getCustomThreadPoolExecutor();
+//        Runnable fetchTask = () -> {
+//            List<RealVo> voList = receiver.poll();
+//            if (voList != null) {
+//                logger.info("voList is not empty, in doInterceptor！");
+//                finalValvo.doInterceptor(voList);
+//            }
+//            else{
+//                logger.info("voList is empty！");
+//            }
+//        };
+//        while (true) {
+//            if (es.getQueue().size() < 20) {
+//                es.execute(fetchTask);
+//            }
+//            if (receiver.isEmpty()) {
+//                logger.info("receiver is empty，es shutdown！");
+//                es.shutdown();
+//                flag.compareAndSet(true, false);
+//                break;
+//            }
+//        }
+//    }
 
     //--------------------入库-------------------
     public boolean splitList(List<RealVo> arrayList, int size) {

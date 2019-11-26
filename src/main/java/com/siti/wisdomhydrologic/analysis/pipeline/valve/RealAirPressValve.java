@@ -250,7 +250,8 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             Double arg1 = regressionEntity.getArg1();
                             Double redisualMax = regressionEntity.getAbResidualMax();
                             Integer sensorCode1 = regressionEntity.getRef1SectionCode();
-                            Double value1 = compareMap.get( date + "," + sensorCode1 ).getRealVal();
+                            Real refReal1 = compareMap.get( date + "," + sensorCode1 );
+                            Double value1 = refReal1 == null ? null : refReal1.getRealVal();
 
                             if (regressionEntity.getRefNum() == 1){
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ){
@@ -263,7 +264,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 " +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1;
-                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                        savedStr = "回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +=";回归模型分析得到==>残差正常，回归模型正常！"+
@@ -275,7 +276,8 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                             else if (regressionEntity.getRefNum() == 2){
                                 Double arg2 = regressionEntity.getArg2();
                                 Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
+                                Real refReal2 = compareMap.get( date + "," + sensorCode2 );
+                                Double value2 = refReal2 == null ? null : refReal2.getRealVal();
 
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
                                         null == arg2 || null == value2 ){
@@ -301,9 +303,12 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                 Double arg2 = regressionEntity.getArg2();
                                 Double arg3 = regressionEntity.getArg3();
                                 Integer sensorCode2 = regressionEntity.getRef2SectionCode();
-                                Double value2 = compareMap.get( date + "," + sensorCode2 ).getRealVal();
                                 Integer sensorCode3 = regressionEntity.getRef3SectionCode();
-                                Double value3 = compareMap.get( date + "," + sensorCode3 ).getRealVal();
+
+                                Real refReal2 = compareMap.get( date + "," + sensorCode2 );
+                                Real refReal3 = compareMap.get( date + "," + sensorCode3 );
+                                Double value2 = refReal2 == null ? null : refReal2.getRealVal();
+                                Double value3 = refReal3 == null ? null : refReal3.getRealVal();
 
                                 if (null == arg0 || null == redisualMax || null == arg1 || null == value1 ||
                                         null == arg2 || null == value2 || null == arg3 || null == value3){
@@ -316,7 +321,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                                         descStr +="==>回归模型分析:残差过大，回归模型异常！"+
                                                 "redisualMax < abs(predictValue - realvalue) = arg0 + value1 * arg1 + value2 * arg2" +
                                                 redisualMax+" < abs(" + predictValue + " -" + realvalue + ") =" + arg0 + "+" + value1 + " *" + arg1 + "+" + value2 + " *" + arg2 + "+" + value3 + " *" + arg3;
-                                        savedStr = "元素"+sensorCode+",回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
+                                        savedStr = "回归异常，预测值 "+predictValue +" 与实际值 " +realvalue + "相差超过" + redisualMax+"!";
                                     }
                                     else{
                                         descStr +="==>回归模型分析:残差正常，回归模型正常！"+

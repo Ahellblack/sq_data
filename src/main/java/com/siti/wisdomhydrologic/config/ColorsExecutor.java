@@ -56,7 +56,7 @@ public class ColorsExecutor {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
-            String threadName = ColorsExecutor.class.getSimpleName() + count.addAndGet(1);
+            String threadName = ColorsExecutor.class.getSimpleName() + count.addAndGet(40);
             t.setName(threadName);
             logger.info("ColorsExecutor start creating thread :{}",threadName);
             return t;
