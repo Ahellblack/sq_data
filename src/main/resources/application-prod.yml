@@ -18,8 +18,8 @@ spring:
        listener:
          simple:
            acknowledge-mode: manual #采用手动应答
-           concurrency: 2
-           max-concurrency: 2
+           concurrency: 1
+           max-concurrency: 1
            retry:
              enabled: true #是否支持重试
            prefetch: 1

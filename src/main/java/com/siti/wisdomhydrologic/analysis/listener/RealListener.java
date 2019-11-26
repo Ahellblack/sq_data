@@ -51,23 +51,23 @@ public class RealListener {
     @RabbitListener(queues = RabbitMQConfig.QUEUE_REAL, containerFactory = "firstRabbitListenerConnectionFactory")
     @RabbitHandler
     public void realProcess(List<RealVo> realVos, Channel channel, Message message) {
-        logger.info(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + "线程ID:" + Thread.currentThread().getId() + realVos.get(0).toString());
+        //logger.info(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()) + "线程ID:" + Thread.currentThread().getId() + realVos.get(0).toString());
         try {
             if (realVos.size() > 0) {
                 calPackage(realVos);
             } else {
-                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+              //  channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
                 logger.error("real queue:{} 数据为空！", LocalDateTime.now().toString());
             }
         } catch (Exception e) {
             logger.error(e.getMessage());
         } finally {
             //----------------------后面可以优化---------------------
-//            try {
-//                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-//            } catch (IOException e1) {
-//                e1.printStackTrace();
-//            }
+            try {
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 
@@ -76,8 +76,6 @@ public class RealListener {
      */
     private void calPackage(List<RealVo> RealVoList) throws Exception {
         RealVo vo = RealVoList.get(0);
-        //------------------------real数据入库-------------------
-        splitList(RealVoList, 1000);
         //-------------------------触发一次-----------------------
         if (flag.compareAndSet(false, true)) {
             PipelineValve finalValvo = new PipelineValve();
@@ -95,7 +93,7 @@ public class RealListener {
                 multiProcess(finalValvo);
             }).start();
             //---------------------------初始化容器--------------
-            receiver = new LinkedBlockingQueue(5);
+            receiver = new LinkedBlockingQueue(40);
             maxBatch.set(vo.getMaxBatch());
             sumSize.set(vo.getSumSize());
             logger.info("RealListener ColorsExecurots Initial...");
@@ -109,7 +107,7 @@ public class RealListener {
             }
         }
         //----------------------------往容器中放入信息（会阻塞）-----------------
-        logger.info("RealVoList size="+RealVoList.size());
+        logger.info("put receiver size {}",receiver.size());
         receiver.put(RealVoList);
         logger.info("real_queue消费者获取day数据...总包数:{},当前包数:{},总条数:{},条数;{},状态:{}", maxBatch.get(), currentbatch, sumSize.get(), currentsize, vo.getStatus());
     }
@@ -117,14 +115,16 @@ public class RealListener {
     /**
      * 触发消费任务
      */
-
     private void multiProcess(PipelineValve finalValvo) {
         ColorsExecutor colors = new ColorsExecutor();
         colors.init();
         ThreadPoolExecutor es = colors.getCustomThreadPoolExecutor();
         Runnable fetchTask = () -> {
+            logger.info("receiver size{}",receiver.size());
             List<RealVo> voList = receiver.poll();
             if (voList != null) {
+                //------------------------real数据入库-------------------
+                splitList(voList, 1000);
                 logger.info("voList is not empty, in doInterceptor！");
                 finalValvo.doInterceptor(voList);
             }else{
@@ -141,7 +141,7 @@ public class RealListener {
                 }
             }
             if (receiver.isEmpty()&&es.getQueue().size()<1) {
-                logger.info("receiver is empty，es shutdown！");
+                logger.info("receiver is empty！");
                 flag.compareAndSet(true, false);
                 break;
             }

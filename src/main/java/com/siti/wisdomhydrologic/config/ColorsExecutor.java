@@ -28,11 +28,11 @@ public class ColorsExecutor {
      */
     public ThreadPoolExecutor init() {
         pool = new ThreadPoolExecutor(
-                1,
-                8,
-                30,
+                6,
+                Runtime.getRuntime().availableProcessors()*2,
+                5,
                 TimeUnit.MINUTES,
-                new ArrayBlockingQueue<Runnable>(20),
+                new ArrayBlockingQueue<Runnable>(40),
                 new ColorThreadFactory(),
                 new ColorExecutionHandler());
         return pool;
