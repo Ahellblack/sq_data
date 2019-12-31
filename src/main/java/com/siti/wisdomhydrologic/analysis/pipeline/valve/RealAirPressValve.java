@@ -8,6 +8,7 @@ import com.siti.wisdomhydrologic.analysis.mapper.AbnormalDetailMapper;
 import com.siti.wisdomhydrologic.analysis.pipeline.Valve;
 import com.siti.wisdomhydrologic.analysis.vo.RealVo;
 import com.siti.wisdomhydrologic.util.LocalDateUtil;
+import com.siti.wisdomhydrologic.util.RateUtils;
 import com.siti.wisdomhydrologic.util.enumbean.DataError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +94,7 @@ public  class RealAirPressValve implements Valve<RealVo,Real,APEntity>,Applicati
                     Boolean flag = false;
                     Integer sensorCode = entry.getKey();  // 记录传感器元素编号
                     String dataErrorCode = null;  // 记录异常错误编号
-                    Double realvalue = vo == null ? -99 : vo.getFACTV();  // 记录当前元素的数值.-99表示中断异常时数值没有
+                    Double realvalue = vo == null ? -99 : RateUtils.setPrecision(vo.getFACTV(), 3);  // 记录当前元素的数值.-99表示中断异常时数值没有
                     String descStr = "RTSQ："+date+","+sensorCode+","+realvalue;
                     String savedStr = "";  // 用来记录错误原因，后续写入数据库中
 
